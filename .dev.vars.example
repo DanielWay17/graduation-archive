@@ -3,3 +3,5 @@
 OWNER_PASSWORD=change-me-to-a-long-password
 # At least 32 random characters. Generate one with: openssl rand -base64 48
 SESSION_SECRET=replace-with-at-least-32-random-characters-xxxxxxxx
+# Optional spam check (Cloudflare Turnstile). Empty = off. The site key goes in wrangler.jsonc "vars".
+TURNSTILE_SECRET_KEY=

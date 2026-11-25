@@ -22,6 +22,7 @@ Uploads stop at `STORAGE_LIMIT_MB` (9,500 MB by default, set in `wrangler.jsonc`
 3. A SHA-256 fingerprint of the original file blocks duplicate uploads.
 4. Limits for visitors: `GUEST_UPLOADS_PER_HOUR` per IP address (60) and `GUEST_UPLOADS_PER_DAY` for everyone together (1,000). The owner has no limit.
 5. Visitor uploads are always published. Only the owner can save drafts. Draft images return 404 to everyone except the owner.
+6. Optional spam check (off by default): see [Spam check](#spam-check-optional).
 
 ## Run it locally
 
@@ -35,6 +36,8 @@ npm run dev                         # http://localhost:5173
 ```
 
 The local database and photo storage are simulated on your computer (in `.wrangler/`), so no Cloudflare account is needed. The sample photos are labelled "Sample photo · replace me" and exist **only** locally.
+
+Checks: `npm run typecheck`, `npm test` (unit tests: metadata removal, formatting, file rules), and `npm run build`. The GitHub Actions workflow in `.github/workflows/ci.yml` runs all three on every push to `main`.
 
 ## Deploy to Cloudflare (free)
 
@@ -64,6 +67,19 @@ The site is then live at `https://graduation-archive.<your-subdomain>.workers.de
 
 Never run `npm run db:seed:local` with `--remote`: the sample photos are only for local previews.
 
+## Spam check (optional)
+
+Cloudflare Turnstile is a free "are you a person?" widget. When it is on, a visitor completes it once after choosing photos, and can then upload for 2 hours. The owner never sees it. It is off until both keys are set.
+
+1. In the Cloudflare dashboard, open **Turnstile → Add widget**. Add your site's hostname (for example `graduation-archive.<your-subdomain>.workers.dev`) and choose **Managed** mode.
+2. Paste the **Site Key** into `wrangler.jsonc` → `vars` → `TURNSTILE_SITE_KEY`.
+3. Save the **Secret Key** as a secret: `npx wrangler secret put TURNSTILE_SECRET_KEY`
+4. Deploy again: `npm run deploy`
+
+To turn it off, set `TURNSTILE_SITE_KEY` back to `""` and deploy.
+
+To try it locally, add Cloudflare's test keys to `.dev.vars`: `TURNSTILE_SITE_KEY=1x00000000000000000000AA` with `TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA` (always passes) or `2x0000000000000000000000000000000AA` (always fails).
+
 ## Personalise
 
 - University, year, date, and tagline: `app/config/site.ts`
@@ -83,6 +99,7 @@ app/
     db.server.ts           every SQL query (D1)
     storage.server.ts      photo files (R2)
     auth.server.ts         owner login, signed session cookie, rate-limited
+    human-check.server.ts  optional Turnstile spam check and the 2-hour upload pass
     uploads.server.ts      upload rules and limits
     image-file.server.ts   WebP/JPEG validation and metadata removal
   routes/                  pages and endpoints (see app/routes.ts)
@@ -94,4 +111,4 @@ scripts/seed-local.sql     local-only placeholder photos
 
 - Favorites are saved in each visitor's browser (localStorage). They do not sync between devices.
 - HEIC photos (iPhone) upload from Safari. Chrome and Firefox cannot open HEIC, and they show a message asking for JPEG.
-- Visitors can upload without signing in, as requested, so spam is possible. The rate limits cap it, and the owner can delete any photo in `/admin`. A CAPTCHA (Cloudflare Turnstile, free) is a possible next step.
+- Visitors can upload without signing in, as requested, so spam is possible. The rate limits cap it, the owner can delete any photo in `/admin`, and you can turn on the [spam check](#spam-check-optional).

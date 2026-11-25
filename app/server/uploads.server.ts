@@ -16,6 +16,7 @@ import {
   recordEvents,
   storageUsedBytes,
 } from "./db.server";
+import { hasUploadPass } from "./human-check.server";
 import { checkAndCleanImage, ImageFileError } from "./image-file.server";
 import { deleteImages, putImage } from "./storage.server";
 
@@ -37,7 +38,10 @@ export async function handleUpload(request: Request): Promise<{ status: number; 
     body: { ok: false as const, error, code },
   });
 
-  // 1. Rate limits for visitors (the owner is not limited).
+  // 1. Spam check and rate limits for visitors (the owner skips both).
+  if (!owner && !(await hasUploadPass(request))) {
+    return fail(403, "Please complete the quick check, then press Upload again.", "verification_required");
+  }
   const who = await clientKey(request);
   if (!owner) {
     const perHour = Number(env.GUEST_UPLOADS_PER_HOUR) || 60;

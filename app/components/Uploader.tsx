@@ -4,6 +4,7 @@ import type { Album } from "~/lib/types";
 import { processImage } from "~/lib/image-processing.client";
 import { validateFile } from "~/lib/image-rules";
 import { sendPhoto } from "~/lib/upload-client";
+import { HumanCheck } from "./HumanCheck";
 import { UploadDropzone } from "./UploadDropzone";
 import { CheckIcon, CloseIcon } from "./Icons";
 
@@ -26,7 +27,20 @@ type Item = {
 const MAX_PER_BATCH = 60;
 const NAME_KEY = "graduation-archive:uploader-name";
 
-export function Uploader({ albums, mode, defaultAlbumId }: { albums: Album[]; mode: "guest" | "owner"; defaultAlbumId?: string }) {
+export function Uploader({
+  albums,
+  mode,
+  defaultAlbumId,
+  humanCheck,
+}: {
+  albums: Album[];
+  mode: "guest" | "owner";
+  defaultAlbumId?: string;
+  /** Set when the spam check is on and this visitor is not the owner. */
+  humanCheck?: { siteKey: string; verified: boolean } | null;
+}) {
+  const [verified, setVerified] = useState(humanCheck?.verified ?? true);
+  const needsCheck = Boolean(humanCheck) && !verified;
   const [items, setItems] = useState<Item[]>([]);
   const [albumId, setAlbumId] = useState(defaultAlbumId ?? albums[0]?.id ?? "");
   const [uploaderName, setUploaderName] = useState("");
@@ -93,7 +107,7 @@ export function Uploader({ albums, mode, defaultAlbumId }: { albums: Album[]; mo
       form.set("published", publish ? "1" : "0");
       const result = await sendPhoto(form, (p) => update(item.key, { progress: p }));
       if (result.ok) update(item.key, { status: "done", progress: 1 });
-      else update(item.key, { status: "error", error: result.error, retryable: !result.code || result.code === "rate_limited" || result.code === "storage_full" });
+      else update(item.key, { status: "error", error: result.error, retryable: !result.code || ["rate_limited", "storage_full", "verification_required"].includes(result.code) });
       return result.ok ? null : result;
     } catch (error) {
       // Processing errors (e.g. a format this browser cannot open) will fail again on retry.
@@ -118,6 +132,12 @@ export function Uploader({ albums, mode, defaultAlbumId }: { albums: Album[]; mo
         const failure = await uploadOne(latest);
         if (failure && !failure.ok && (failure.code === "rate_limited" || failure.code === "storage_full")) {
           stop = true;
+          setNotice(failure.error);
+        }
+        if (failure && !failure.ok && failure.code === "verification_required") {
+          // The 2-hour pass ran out mid-batch: show the check again; the rest stay ready.
+          stop = true;
+          setVerified(false);
           setNotice(failure.error);
         }
       }
@@ -225,6 +245,16 @@ export function Uploader({ albums, mode, defaultAlbumId }: { albums: Album[]; mo
         </ul>
       )}
 
+      {items.length > 0 && needsCheck && humanCheck && (
+        <HumanCheck
+          siteKey={humanCheck.siteKey}
+          onVerified={() => {
+            setVerified(true);
+            setNotice("");
+          }}
+        />
+      )}
+
       {items.length > 0 && (
         <div className="sticky bottom-3 z-10 paper-card flex flex-wrap items-center justify-between gap-3 px-4 py-3">
           <p className="text-sm" aria-live="polite">
@@ -238,7 +268,7 @@ export function Uploader({ albums, mode, defaultAlbumId }: { albums: Album[]; mo
                 See album
               </Link>
             )}
-            <button type="button" className="btn btn-primary" disabled={running || pending === 0} onClick={start}>
+            <button type="button" className="btn btn-primary" disabled={running || pending === 0 || needsCheck} onClick={start}>
               {running ? "Uploading…" : `Upload ${pending} ${pending === 1 ? "photo" : "photos"}`}
             </button>
           </div>

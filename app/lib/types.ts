@@ -48,4 +48,4 @@ export type Photo = {
 
 export type UploadResult =
   | { ok: true; photo: Photo }
-  | { ok: false; error: string; code?: "duplicate" | "rate_limited" | "invalid" | "storage_full" | "unauthorized" };
+  | { ok: false; error: string; code?: "duplicate" | "rate_limited" | "invalid" | "storage_full" | "unauthorized" | "verification_required" };

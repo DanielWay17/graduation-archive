@@ -19,7 +19,10 @@
 		// How many photos one visitor (one IP address) may upload per hour.
 		"GUEST_UPLOADS_PER_HOUR": "60",
 		// How many photos all visitors together may upload per day.
-		"GUEST_UPLOADS_PER_DAY": "1000"
+		"GUEST_UPLOADS_PER_DAY": "1000",
+		// Optional spam check (Cloudflare Turnstile). Leave empty to turn it off.
+		// To turn it on, paste the site key here and run: npx wrangler secret put TURNSTILE_SECRET_KEY
+		"TURNSTILE_SITE_KEY": ""
 	},
 	"d1_databases": [
 		{

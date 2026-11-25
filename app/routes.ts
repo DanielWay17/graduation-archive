@@ -10,6 +10,7 @@ export default [
   // Resource routes (no UI)
   route("img/:id/:variant", "routes/img.ts"),
   route("api/photos", "routes/api.photos.ts"),
+  route("api/upload-pass", "routes/api.upload-pass.ts"),
 
   // Owner area
   ...prefix("admin", [

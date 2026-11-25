@@ -1,5 +1,7 @@
 import type { Route } from "./+types/upload";
 import { listAlbums } from "~/server/db.server";
+import { isOwner } from "~/server/auth.server";
+import { hasUploadPass, humanCheckSiteKey } from "~/server/human-check.server";
 import { Uploader } from "~/components/Uploader";
 import { Seo } from "~/components/Seo";
 import { Squiggle, Star } from "~/components/Decorations";
@@ -7,7 +9,9 @@ import { Squiggle, Star } from "~/components/Decorations";
 export async function loader({ request }: Route.LoaderArgs) {
   const albums = await listAlbums();
   const requested = new URL(request.url).searchParams.get("album");
-  return { albums, defaultAlbumId: albums.some((a) => a.id === requested) ? requested! : undefined };
+  const siteKey = humanCheckSiteKey();
+  const humanCheck = siteKey && !(await isOwner(request)) ? { siteKey, verified: await hasUploadPass(request) } : null;
+  return { albums, defaultAlbumId: albums.some((a) => a.id === requested) ? requested! : undefined, humanCheck };
 }
 
 export default function Upload({ loaderData }: Route.ComponentProps) {
@@ -27,7 +31,7 @@ export default function Upload({ loaderData }: Route.ComponentProps) {
         <Star className="absolute -top-1 right-0 hidden sm:block" />
       </header>
       <div className="mt-8">
-        <Uploader albums={loaderData.albums} mode="guest" defaultAlbumId={loaderData.defaultAlbumId} />
+        <Uploader albums={loaderData.albums} mode="guest" defaultAlbumId={loaderData.defaultAlbumId} humanCheck={loaderData.humanCheck} />
       </div>
     </div>
   );
