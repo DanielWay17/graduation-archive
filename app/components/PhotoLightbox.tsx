@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import type { Photo } from "~/lib/types";
 import { formatPhotoDate, photoAlt, photoLabel } from "~/lib/format";
 import { FavoriteButton } from "./FavoriteButton";
@@ -6,8 +7,9 @@ import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, ImageIcon } from "./Icons
 
 /**
  * Fullscreen photo viewer.
- * Keyboard: Escape closes, ← / → move. Touch: swipe left/right, swipe down closes;
- * the photo follows the finger during a swipe and glides back if the swipe falls short.
+ * Keyboard: Escape closes, ← / → move (both instant). Touch: swipe left/right, swipe down closes;
+ * the photo follows the finger, glides back if the swipe falls short, and otherwise carries on
+ * in the swipe direction while the next photo slides in (or the viewer fades out).
  * Focus stays inside while open and returns to the photo that opened it.
  */
 
@@ -19,6 +21,11 @@ const FLICK_VELOCITY = 0.11;
 const FLICK_MIN_DISTANCE = 20;
 /** Past the first or last photo the track moves at this fraction of the finger (rubber-band). */
 const EDGE_RESISTANCE = 0.3;
+/** Durations (ms), all on --ease-out. A committed swipe: leave + enter = 250. */
+const SETTLE_MS = 200;
+const LEAVE_MS = 110;
+const ENTER_MS = 140;
+const CLOSE_MS = 200;
 
 type Drag = {
   /** Finger position that corresponds to a zero offset. */
@@ -46,7 +53,11 @@ export function PhotoLightbox({
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
+  /** True while a committed swipe or swipe-close animates; new touches wait for it. */
+  const busy = useRef(false);
+  const timer = useRef<number | undefined>(undefined);
   const photo = photos[index];
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
   const [attempt, setAttempt] = useState(0);
@@ -62,18 +73,19 @@ export function PhotoLightbox({
     setAttempt(0);
   }, [photo?.id]);
 
-  // Lock background scroll without losing the scroll position.
+  // Lock background scroll without losing the scroll position. No padding fix-up is
+  // needed: `scrollbar-gutter: stable` (app.css) keeps the scrollbar's space reserved.
   useEffect(() => {
-    const { overflow, paddingRight } = document.body.style;
-    const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+    const { overflow } = document.body.style;
     document.body.style.overflow = "hidden";
-    if (scrollbar > 0) document.body.style.paddingRight = `${scrollbar}px`;
     closeRef.current?.focus();
     return () => {
       document.body.style.overflow = overflow;
-      document.body.style.paddingRight = paddingRight;
     };
   }, []);
+
+  // A swipe animation must not change the photo or close the viewer after it is gone.
+  useEffect(() => () => window.clearTimeout(timer.current), []);
 
   // Preload the neighbours' full images so arrows feel instant.
   useEffect(() => {
@@ -108,24 +120,60 @@ export function PhotoLightbox({
     }
   };
 
+  const reduceMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
   /**
-   * Moves the photo track and, while dragging down, thins the dark background so the
-   * gallery shows through. Written straight to the DOM: no React render per touchmove.
+   * Moves the photo track and, while dragging down, fades the backdrop so the gallery
+   * shows through. Written straight to the DOM, transform and opacity only: no React
+   * render and no repaint per touchmove. `ms` = 0 follows the finger with no transition.
    */
-  const setOffset = (x: number, y: number, settle: boolean) => {
+  const setOffset = (x: number, y: number, ms = 0) => {
     const track = trackRef.current;
-    const root = dialogRef.current;
-    if (!track || !root) return;
-    track.classList.toggle("is-settling", settle);
-    root.classList.toggle("is-settling", settle);
+    const backdrop = backdropRef.current;
+    if (!track || !backdrop) return;
+    const timing = ms && !reduceMotion() ? `${ms}ms var(--ease-out)` : "";
+    track.style.transition = timing ? `transform ${timing}` : "none";
+    backdrop.style.transition = timing ? `opacity ${timing}` : "none";
     track.style.transform = x || y ? `translate3d(${x}px, ${y}px, 0)` : "";
-    root.style.backgroundColor = y > 0 ? `rgb(31 26 22 / ${Math.max(0, 1 - y / 600)})` : "";
+    backdrop.style.opacity = y > 0 ? String(Math.max(0, 1 - y / 600)) : "";
+  };
+
+  /** A committed sideways swipe: the old photo carries on off-screen, the new one slides in from the other side. */
+  const slideTo = (towardNext: boolean) => {
+    const go = towardNext ? next : prev;
+    if (reduceMotion()) {
+      setOffset(0, 0);
+      go();
+      return;
+    }
+    const out = (towardNext ? -1 : 1) * (trackRef.current?.offsetWidth ?? window.innerWidth);
+    busy.current = true;
+    setOffset(out, 0, LEAVE_MS);
+    timer.current = window.setTimeout(() => {
+      flushSync(() => go()); // render the new photo before it moves
+      setOffset(-out, 0); // park it past the opposite edge,
+      trackRef.current?.getBoundingClientRect(); // commit that position,
+      setOffset(0, 0, ENTER_MS); // then slide it in
+      timer.current = window.setTimeout(() => (busy.current = false), ENTER_MS);
+    }, LEAVE_MS);
+  };
+
+  /** A committed swipe down: the photo keeps falling while the viewer fades, then it closes. */
+  const swipeClose = (fromY: number) => {
+    const root = dialogRef.current;
+    if (!root || reduceMotion()) return onClose();
+    busy.current = true;
+    root.style.pointerEvents = "none";
+    root.style.transition = `opacity ${CLOSE_MS}ms var(--ease-out)`;
+    root.style.opacity = "0";
+    setOffset(0, fromY + window.innerHeight * 0.3, CLOSE_MS);
+    timer.current = window.setTimeout(onClose, CLOSE_MS);
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length !== 1) {
+    if (busy.current || e.touches.length !== 1) {
       // A second finger means pinch-zoom: drop the swipe and put the photo back.
-      if (drag.current) setOffset(0, 0, true);
+      if (drag.current) setOffset(0, 0, SETTLE_MS);
       drag.current = null;
       return;
     }
@@ -134,7 +182,7 @@ export function PhotoLightbox({
     const m = transform && transform !== "none" ? new DOMMatrixReadOnly(transform) : null;
     const ox = m?.m41 ?? 0;
     const oy = m?.m42 ?? 0;
-    setOffset(ox, oy, false);
+    setOffset(ox, oy);
     drag.current = {
       originX: e.touches[0].clientX - ox,
       originY: e.touches[0].clientY - oy,
@@ -156,9 +204,9 @@ export function PhotoLightbox({
     }
     if (d.axis === "x") {
       const pastEdge = (d.dx > 0 && !hasPrev) || (d.dx < 0 && !hasNext);
-      setOffset(pastEdge ? d.dx * EDGE_RESISTANCE : d.dx, 0, false);
+      setOffset(pastEdge ? d.dx * EDGE_RESISTANCE : d.dx, 0);
     } else if (d.axis === "y") {
-      setOffset(0, Math.max(0, d.dy), false);
+      setOffset(0, Math.max(0, d.dy));
     }
   };
 
@@ -175,22 +223,15 @@ export function PhotoLightbox({
       const towardNext = d.dx < 0 && hasNext;
       const towardPrev = d.dx > 0 && hasPrev;
       const distance = Math.abs(d.dx);
-      if ((towardNext || towardPrev) && (distance > SWIPE_DISTANCE || flicked(distance))) {
-        // Reset at once: the new photo fades in at the centre.
-        setOffset(0, 0, false);
-        if (towardNext) next();
-        else prev();
-        return;
-      }
+      if ((towardNext || towardPrev) && (distance > SWIPE_DISTANCE || flicked(distance))) return slideTo(towardNext);
     } else if (d.dy > CLOSE_DISTANCE || flicked(d.dy)) {
-      onClose();
-      return;
+      return swipeClose(Math.max(0, d.dy));
     }
-    setOffset(0, 0, true);
+    setOffset(0, 0, SETTLE_MS);
   };
 
   const onTouchCancel = () => {
-    if (drag.current) setOffset(0, 0, true);
+    if (drag.current) setOffset(0, 0, SETTLE_MS);
     drag.current = null;
   };
 
@@ -204,9 +245,11 @@ export function PhotoLightbox({
       role="dialog"
       aria-modal="true"
       aria-label={`Photo ${index + 1} of ${photos.length}: ${label}`}
-      className="lightbox fixed inset-0 z-50 flex flex-col bg-[#1f1a16] text-white lightbox-enter"
+      className="fixed inset-0 z-50 flex flex-col text-white lightbox-enter"
       onKeyDown={onKeyDown}
     >
+      {/* The dark backdrop is its own layer, so swipe-down fades its opacity instead of repainting the screen. */}
+      <div ref={backdropRef} className="absolute inset-0 -z-10 bg-[#1f1a16]" aria-hidden="true" />
       {/* Top bar */}
       <div className="flex items-center justify-between gap-2 px-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4">
         <p className="pl-2 text-sm text-white/70 tabular-nums" aria-live="polite">
@@ -227,7 +270,7 @@ export function PhotoLightbox({
         onClick={(e) => (e.target === e.currentTarget || e.target === trackRef.current) && onClose()}
       >
         {/* The track holds the photo and follows the finger during a swipe. */}
-        <div ref={trackRef} className="lightbox-track absolute inset-0 flex items-center justify-center px-2 sm:px-20">
+        <div ref={trackRef} className="absolute inset-0 flex items-center justify-center px-2 sm:px-20">
           {status === "loading" && (
             // Show the already-cached thumbnail, softened, while the full photo loads.
             <img
@@ -257,7 +300,7 @@ export function PhotoLightbox({
               }}
               onLoad={() => setStatus("loaded")}
               onError={() => setStatus("error")}
-              className={`relative max-h-full w-auto max-w-full object-contain transition-opacity duration-300 ${status === "loaded" ? "opacity-100" : "opacity-0"}`}
+              className={`relative max-h-full w-auto max-w-full object-contain transition-opacity duration-300 ease-[var(--ease-out)] ${status === "loaded" ? "opacity-100" : "opacity-0"}`}
               draggable={false}
             />
           )}

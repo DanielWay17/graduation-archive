@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, useLocation } from "react-router";
+import { Link, NavLink, useLocation, useNavigation } from "react-router";
 import { site } from "~/config/site";
 import { useFavorites } from "~/lib/favorites";
 import { CloseIcon, MenuIcon, UploadIcon } from "./Icons";
@@ -28,9 +28,12 @@ export function SiteHeader({ isOwner }: { isOwner: boolean }) {
   const { ids } = useFavorites();
   useEffect(() => setMenuOpen(false), [location.pathname]);
 
-  const navClass = ({ isActive }: { isActive: boolean }) =>
+  // While a page loads, highlight the tab that was clicked, not the one being left,
+  // so the click is acknowledged at once instead of after the server answers.
+  const navigating = useNavigation().state !== "idle";
+  const navClass = ({ isActive, isPending }: { isActive: boolean; isPending: boolean }) =>
     `relative inline-flex items-center min-h-[44px] px-3 rounded-full text-[0.95rem] transition-colors ${
-      isActive ? "text-ink-strong font-medium bg-paper-2" : "text-ink hover:text-ink-strong hover:bg-paper-2/70"
+      (navigating ? isPending : isActive) ? "text-ink-strong font-medium bg-paper-2" : "text-ink hover:text-ink-strong hover:bg-paper-2/70"
     }`;
 
   const favoriteBadge = ids.length > 0 && (

@@ -1,36 +1,54 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useSyncExternalStore } from "react";
 import { Link, useFetcher } from "react-router";
 import type { Photo } from "~/lib/types";
 import { useFavorites } from "~/lib/favorites";
+import { cachedPhoto, rememberFetched } from "~/lib/photo-cache";
 import { PhotoGallery } from "~/components/PhotoGallery";
 import { EmptyState } from "~/components/EmptyState";
 import { Seo } from "~/components/Seo";
 import { Squiggle } from "~/components/Decorations";
 
-/** Favorites live in this browser's localStorage, so the photo details are fetched on the client. */
+const noSubscribe = () => () => {};
+/**
+ * False only while hydrating the server HTML; true on every client render after,
+ * including client-side navigations, so those never flash the loading skeleton.
+ */
+const useHydrated = () => useSyncExternalStore(noSubscribe, () => true, () => false);
+
+/**
+ * Favorites live in this browser's localStorage, so the photo details come from the client:
+ * photos seen earlier in this visit paint at once; only unseen ones are fetched.
+ */
 export default function Favorites() {
   const { ids } = useFavorites();
+  const hydrated = useHydrated();
   const fetcher = useFetcher<{ photos: Photo[] }>();
-  const [hydrated, setHydrated] = useState(false);
-  const [requested, setRequested] = useState<Set<string>>(new Set());
-  const idKey = ids.join(",");
+  const requested = useRef<string[]>([]);
+  // Bumped when a fetch result lands in the cache, so the page re-reads it.
+  const [cacheVersion, cacheUpdated] = useReducer((n: number) => n + 1, 0);
+
+  const missingKey = hydrated ? ids.filter((id) => cachedPhoto(id) === undefined).join(",") : "";
 
   useEffect(() => {
-    setHydrated(true);
-    // Fetch only when a favorite appears that was not requested yet; removals filter locally.
-    if (ids.length && ids.some((id) => !requested.has(id))) {
-      setRequested(new Set(ids));
-      fetcher.load(`/api/photos?ids=${encodeURIComponent(idKey)}`);
-    }
+    if (!missingKey) return;
+    requested.current = missingKey.split(",");
+    fetcher.load(`/api/photos?ids=${encodeURIComponent(missingKey)}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idKey]);
+  }, [missingKey]);
 
-  const photos = useMemo(() => {
-    const byId = new Map(fetcher.data?.photos.map((p) => [p.id, p]));
-    return ids.map((id) => byId.get(id)).filter((p): p is Photo => Boolean(p));
-  }, [fetcher.data, ids]);
+  useEffect(() => {
+    if (!fetcher.data) return;
+    rememberFetched(requested.current, fetcher.data.photos);
+    cacheUpdated();
+  }, [fetcher.data]);
 
-  const loading = !hydrated || (ids.length > 0 && !fetcher.data);
+  const photos = useMemo(
+    () => (hydrated ? ids.map((id) => cachedPhoto(id)).filter((p): p is Photo => Boolean(p)) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hydrated, ids, cacheVersion],
+  );
+
+  const loading = !hydrated || missingKey !== "";
 
   return (
     <div className="container-page pt-10 sm:pt-14">
@@ -62,7 +80,7 @@ export default function Favorites() {
             action={<Link to="/albums" className="btn btn-primary">Browse albums</Link>}
           />
         )}
-        {fetcher.data && photos.length < ids.length && !loading && (
+        {!loading && photos.length < ids.length && (
           <p className="mt-6 text-sm text-ink-soft">Some saved photos are no longer in the archive.</p>
         )}
       </div>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Photo } from "~/lib/types";
+import { rememberPhotos } from "~/lib/photo-cache";
 import { PolaroidCard } from "./PolaroidCard";
 import { PhotoLightbox } from "./PhotoLightbox";
 
@@ -31,6 +32,9 @@ export function PhotoGallery({ photos, showAlbum = false }: { photos: Photo[]; s
     // Return focus to the photo that opened the viewer.
     requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }));
   }, []);
+
+  // Remember these photos so Favorites can show any of them without fetching again.
+  useEffect(() => rememberPhotos(photos), [photos]);
 
   // Keep the hash in sync with the open photo.
   useEffect(() => {

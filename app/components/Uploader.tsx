@@ -215,7 +215,7 @@ export function Uploader({
                   <div className="absolute inset-x-0 bottom-0 bg-ink/70 px-3 py-2 text-xs text-white">
                     {item.status === "processing" ? "Preparing photo…" : `Uploading ${Math.round(item.progress * 100)}%`}
                     <div className="mt-1 h-1 rounded bg-white/30" role="progressbar" aria-label={`Upload progress for ${item.file.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(item.progress * 100)}>
-                      <div className="h-1 rounded bg-white transition-[width]" style={{ width: `${item.progress * 100}%` }} />
+                      <div className="h-1 origin-left rounded bg-white transition-transform duration-150 ease-linear" style={{ transform: `scaleX(${item.progress})` }} />
                     </div>
                   </div>
                 )}
