@@ -146,7 +146,7 @@ export default function AdminAlbum({ loaderData }: Route.ComponentProps) {
           <h2 className="text-3xl">{album.title}</h2>
           <p className="text-sm text-ink-soft">{photos.length} photos · {album.draftCount} drafts</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link to={`/albums/${album.slug}`} className="btn btn-secondary btn-sm">View public page</Link>
           <Link to={`/admin/upload?album=${album.id}`} className="btn btn-primary btn-sm"><UploadIcon size={16} /> Upload here</Link>
         </div>

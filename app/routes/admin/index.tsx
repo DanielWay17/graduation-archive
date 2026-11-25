@@ -129,10 +129,10 @@ export default function AdminAlbums({ loaderData }: Route.ComponentProps) {
   const create = useFetcher<typeof action>();
   const creating = create.state !== "idle";
   return (
-    <div className="grid gap-10 lg:grid-cols-[1fr_22rem] items-start">
+    <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] items-start">
       <section aria-labelledby="albums-heading">
         <h2 id="albums-heading" className="sr-only">Albums</h2>
-        <ul className="grid gap-4">
+        <ul className="grid grid-cols-1 gap-4">
           {albums.map((album, i) => (
             <AlbumRow key={album.id} album={album} first={i === 0} last={i === albums.length - 1} />
           ))}
