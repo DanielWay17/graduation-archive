@@ -14,7 +14,8 @@
     "db:seed:local": "wrangler d1 execute DB --local --file=scripts/seed-local.sql",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "setup:local": "npm run db:migrate:local && npm run db:seed:local",
-    "test": "vitest run"
+    "test": "vitest run",
+    "hooks:install": "git config core.hooksPath scripts/git-hooks"
   },
   "dependencies": {
     "isbot": "^5.1.36",

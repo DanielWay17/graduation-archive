@@ -67,14 +67,15 @@ The site is then live at `https://graduation-archive.<your-subdomain>.workers.de
 
 Never run `npm run db:seed:local` with `--remote`: the sample photos are only for local previews.
 
-### Automatic deploys
+### Automatic deploys (free, from your computer)
 
-Every push to `main` deploys automatically: GitHub Actions runs the checks, then `npm run deploy`, then confirms the live site answers. It uses two repository secrets (GitHub → Settings → Secrets and variables → Actions):
+A git **pre-push hook** deploys for you. When you `git push` to `main`, `scripts/git-hooks/pre-push` runs the type check and tests, then `npm run deploy`. If any step fails, the push is stopped, so the live site always matches `main`.
 
-- `CLOUDFLARE_API_TOKEN`: a Cloudflare API token with the **Workers Scripts: Edit** permission
-- `CLOUDFLARE_ACCOUNT_ID`: your Cloudflare account id
+- Install it once per clone: `npm run hooks:install`. You also need to be logged in with `npx wrangler login`.
+- Push without deploying, once: `SKIP_DEPLOY=1 git push`
+- The hook refuses to deploy if you have uncommitted changes, or if the commit you push is not the one checked out.
 
-Database migrations are not part of the automatic deploy. After adding a file to `migrations/`, run `npm run db:migrate:remote` yourself **before** pushing. (To automate it, give the token the **D1: Edit** permission and add that command to the deploy job.)
+Database migrations are not part of the deploy. After adding a file to `migrations/`, run `npm run db:migrate:remote` **before** pushing.
 
 ## Spam check (optional)
 

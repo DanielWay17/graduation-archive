@@ -1,0 +1,36 @@
+#!/bin/sh
+# Free auto-deploy: when `main` is pushed, run the checks and deploy to Cloudflare first.
+# If any step fails, the push is stopped, so the live site always matches main.
+# Installed by `npm run hooks:install`. Skip once with: SKIP_DEPLOY=1 git push
+set -e
+
+deploy=0
+pushed_sha=""
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ] && [ "$local_sha" != "0000000000000000000000000000000000000000" ]; then
+    deploy=1
+    pushed_sha="$local_sha"
+  fi
+done
+[ "$deploy" = 1 ] || exit 0
+
+if [ -n "$SKIP_DEPLOY" ]; then
+  echo "pre-push: SKIP_DEPLOY is set, pushing without deploying."
+  exit 0
+fi
+
+# Deploy exactly what is being pushed: the pushed commit must be the checked-out one, with no uncommitted changes.
+if [ "$pushed_sha" != "$(git rev-parse HEAD)" ]; then
+  echo "pre-push: you are pushing a commit that is not checked out. Check out main first, or use SKIP_DEPLOY=1."
+  exit 1
+fi
+if ! git diff --quiet HEAD --; then
+  echo "pre-push: there are uncommitted changes. Commit or stash them, so the deploy matches main."
+  exit 1
+fi
+
+echo "pre-push: checking, then deploying to Cloudflare…"
+npm run typecheck
+npm test
+npm run deploy
+echo "pre-push: deployed. Continuing the push."
