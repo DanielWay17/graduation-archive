@@ -37,7 +37,7 @@ npm run dev                         # http://localhost:5173
 
 The local database and photo storage are simulated on your computer (in `.wrangler/`), so no Cloudflare account is needed. The sample photos are labelled "Sample photo · replace me" and exist **only** locally.
 
-Checks: `npm run typecheck`, `npm test` (unit tests: metadata removal, formatting, file rules), and `npm run build`. The GitHub Actions workflow in `.github/workflows/ci.yml` runs all three on every push to `main`.
+Checks: `npm run typecheck`, `npm test` (unit tests: metadata removal, formatting, file rules), and `npm run build`. The GitHub Actions workflow in `.github/workflows/ci.yml` runs all three on every push and pull request.
 
 ## Deploy to Cloudflare (free)
 
@@ -66,6 +66,15 @@ npm run deploy
 The site is then live at `https://graduation-archive.<your-subdomain>.workers.dev`. To use your own domain, add it under Workers → your worker → Settings → Domains & Routes.
 
 Never run `npm run db:seed:local` with `--remote`: the sample photos are only for local previews.
+
+### Automatic deploys
+
+Every push to `main` deploys automatically: GitHub Actions runs the checks, then `npm run deploy`, then confirms the live site answers. It uses two repository secrets (GitHub → Settings → Secrets and variables → Actions):
+
+- `CLOUDFLARE_API_TOKEN`: a Cloudflare API token with the **Workers Scripts: Edit** permission
+- `CLOUDFLARE_ACCOUNT_ID`: your Cloudflare account id
+
+Database migrations are not part of the automatic deploy. After adding a file to `migrations/`, run `npm run db:migrate:remote` yourself **before** pushing. (To automate it, give the token the **D1: Edit** permission and add that command to the deploy job.)
 
 ## Spam check (optional)
 
