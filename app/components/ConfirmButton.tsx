@@ -32,7 +32,7 @@ export function ConfirmButton({
       </button>
       <dialog
         ref={dialogRef}
-        className="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-xl border border-line bg-card p-0 text-ink shadow-[var(--shadow-lift)] backdrop:bg-ink/40"
+        className="confirm-dialog m-auto w-[min(26rem,calc(100vw-2rem))] rounded-xl border border-line bg-card p-0 text-ink shadow-[var(--shadow-lift)] backdrop:bg-ink/40"
         aria-labelledby={`${fields.id}-confirm-title`}
       >
         <fetcher.Form method="post" action={action} onSubmit={() => dialogRef.current?.close()} className="p-6">

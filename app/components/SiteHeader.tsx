@@ -89,7 +89,7 @@ export function SiteHeader({ isOwner }: { isOwner: boolean }) {
         </div>
       </div>
       {menuOpen && (
-        <nav id="mobile-menu" aria-label="Main" className="md:hidden border-t border-line bg-paper">
+        <nav id="mobile-menu" aria-label="Main" className="mobile-menu md:hidden border-t border-line bg-paper">
           <ul className="container-page grid gap-1 py-3">
             {links.map((l) => (
               <li key={l.to}>
