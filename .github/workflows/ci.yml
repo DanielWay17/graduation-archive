@@ -1,9 +1,12 @@
 name: CI
 
+# CI: every pull request into main, and every push to main, runs the checks.
+# CD: every push to main (including a merged pull request) deploys to Cloudflare after the checks pass.
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   check:
@@ -21,4 +24,42 @@ jobs:
       - run: npm test
       - run: npm run build
 
-# Deploys are done by the git pre-push hook (scripts/git-hooks/pre-push), not here.
+  deploy:
+    needs: check
+    # Never for pull requests: their code is untrusted until merged, and forks get no secrets.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # One deploy at a time; a newer push waits for the running deploy instead of racing it.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    environment:
+      name: production
+      url: https://graduation-archive.nguyencongtiendung17.workers.dev
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Check the Cloudflare secrets are set
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Add the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets (see README → Automatic deploys)."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # New files in migrations/ are applied to the live database before the new code goes live.
+      - run: npm run db:migrate:remote
+      - run: npm run deploy
+      - name: Check the live site answers
+        run: |
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" https://graduation-archive.nguyencongtiendung17.workers.dev/)
+            [ "$code" = 200 ] && echo "Live site OK" && exit 0
+            sleep 10
+          done
+          echo "Live site returned $code" && exit 1

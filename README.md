@@ -67,15 +67,21 @@ The site is then live at `https://graduation-archive.<your-subdomain>.workers.de
 
 Never run `npm run db:seed:local` with `--remote`: the sample photos are only for local previews.
 
-### Automatic deploys (free, from your computer)
+### Automatic deploys (CI/CD with GitHub Actions)
 
-A git **pre-push hook** deploys for you. When you `git push` to `main`, `scripts/git-hooks/pre-push` runs the type check and tests, then `npm run deploy`. If any step fails, the push is stopped, so the live site always matches `main`.
+`.github/workflows/ci.yml` does two things:
 
-- Install it once per clone: `npm run hooks:install`. You also need to be logged in with `npx wrangler login`.
-- Push without deploying, once: `SKIP_DEPLOY=1 git push`
-- The hook refuses to deploy if you have uncommitted changes, or if the commit you push is not the one checked out.
+- **CI**: every pull request into `main`, and every push to `main`, runs the type check, tests, and build. Branch protection on `main` requires this `check` to pass before a pull request can be merged.
+- **CD**: every push to `main` (including a merged pull request) applies new database migrations, deploys with `npm run deploy`, and confirms the live site answers. Pull requests never deploy.
 
-Database migrations are not part of the deploy. After adding a file to `migrations/`, run `npm run db:migrate:remote` **before** pushing.
+It needs two repository secrets (GitHub → Settings → Secrets and variables → Actions):
+
+- `CLOUDFLARE_API_TOKEN`: a Cloudflare API token with **Workers Scripts: Edit** and **D1: Edit**
+- `CLOUDFLARE_ACCOUNT_ID`: your Cloudflare account id
+
+GitHub Actions is free for public repositories.
+
+Optional local check: `npm run hooks:install` adds a git pre-push hook that runs the type check and tests before a push to `main` (skip once with `SKIP_CHECKS=1 git push`).
 
 ## Spam check (optional)
 
