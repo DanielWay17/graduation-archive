@@ -21,7 +21,7 @@ export function AlbumCard({ album, index }: { album: Album; index: number }) {
             height={cover.height}
             loading={index < 3 ? "eager" : "lazy"}
             decoding="async"
-            className="transition-transform duration-300 ease-[var(--ease-out)] group-hover:scale-[1.03]"
+            className="transition-transform duration-[250ms] ease-[var(--ease-out)] motion-safe:group-hover:scale-[1.03]"
           />
         ) : (
           <span className="absolute inset-0 grid place-items-center content-center gap-1 text-ink-soft bg-paper-2">

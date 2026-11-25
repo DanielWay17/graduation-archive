@@ -62,6 +62,9 @@
     color: var(--color-ink);
     -webkit-text-size-adjust: 100%;
     scroll-padding-top: 5rem;
+    /* Always reserve the scrollbar's space, so a short page (e.g. Favorites) does not
+       shift sideways against a long one (Albums) when the scrollbar comes and goes. */
+    scrollbar-gutter: stable;
   }
   body {
     font-family: var(--font-sans);
@@ -228,12 +231,23 @@
   @media (min-width: 768px) { .masonry > * { padding-top: 1rem; margin-bottom: 1rem; } }
 
   /* --- Skeleton shimmer while images load -------------------- */
+  /* The highlight is its own layer moved with transform, so the shimmer runs on the GPU
+     instead of repainting every loading card on every frame. */
   .img-skeleton {
-    background: linear-gradient(100deg, var(--color-beige) 30%, var(--color-paper-2) 50%, var(--color-beige) 70%);
-    background-size: 300% 100%;
+    position: relative; /* `absolute` from a utility class still wins (later layer) */
+    overflow: hidden;
+    background: var(--color-beige);
+  }
+  .img-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 30%, var(--color-paper-2) 50%, transparent 70%);
+    transform: translateX(-100%);
     animation: shimmer 1.6s linear infinite;
   }
-  @keyframes shimmer { to { background-position: -150% 0; } }
+  @keyframes shimmer { to { transform: translateX(100%); } }
+  @keyframes skeleton-pulse { 50% { opacity: 0.55; } }
 
   /* --- Form fields -------------------------------------------- */
   .field-label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.3rem; color: var(--color-ink); }
@@ -259,12 +273,9 @@
   .sticker { pointer-events: none; user-select: none; }
 }
 
-.lightbox-enter { animation: lightbox-in 220ms var(--ease-out) both; }
+/* `backwards`, not `both`: once the fade-in ends it must let go of opacity, so the swipe-down close can fade it out. */
+.lightbox-enter { animation: lightbox-in 220ms var(--ease-out) backwards; }
 @keyframes lightbox-in { from { opacity: 0; } }
-
-/* Lightbox swipe: the photo follows the finger with no transition; .is-settling animates the snap-back. */
-.lightbox-track.is-settling { transition: transform 200ms var(--ease-out); }
-.lightbox.is-settling { transition: background-color 200ms var(--ease-out); }
 
 /* Upload finished: the overlay fades in, then the badge settles in just after it. */
 .upload-done { transition: opacity 250ms var(--ease-out); }
@@ -298,20 +309,26 @@
 }
 
 /* Reveal-on-scroll: JS marks only below-the-fold sections as pending, so nothing flickers. */
-[data-reveal] { transition: opacity 500ms ease, transform 600ms var(--ease-out); }
+[data-reveal] { transition: opacity 500ms var(--ease-out), transform 600ms var(--ease-out); }
 [data-reveal="pending"] { opacity: 0; transform: translateY(16px); }
 
 /* Reduced motion = no movement, but gentle opacity fades stay (they help comprehension). */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .animate-wiggle { animation: none; }
-  .animate-fade-up { animation: lightbox-in 300ms ease both; }
+  .animate-fade-up { animation: lightbox-in 300ms var(--ease-out) both; }
   [data-reveal="pending"] { transform: none; }
-  [data-reveal] { transition: opacity 400ms ease; }
-  .polaroid, .polaroid-interactive:hover { translate: none; transition: box-shadow 200ms ease; }
+  [data-reveal] { transition: opacity 400ms var(--ease-out); }
+  /* Hover keeps its shadow lift, but the card neither moves nor changes its tilt. */
+  .polaroid, .polaroid-interactive:hover {
+    translate: none;
+    rotate: calc(var(--tilt, 0deg) * var(--tilt-scale));
+    transition: box-shadow 200ms ease;
+  }
+  /* No sweeping highlight: the skeleton gently pulses instead. */
+  .img-skeleton { animation: skeleton-pulse 2s ease-in-out infinite; }
+  .img-skeleton::after { content: none; }
   .btn:active:not(:disabled), .icon-btn:active:not(:disabled) { transform: none; }
-  /* The photo still follows the finger (direct manipulation), but snaps back without gliding. */
-  .lightbox-track.is-settling, .lightbox.is-settling { transition: none; }
   .upload-done-badge { transition: opacity 250ms var(--ease-out); }
   .mobile-menu { transition: opacity 180ms var(--ease-out); }
   .confirm-dialog, .confirm-dialog[open] { scale: none; }
