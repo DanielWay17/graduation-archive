@@ -29,7 +29,7 @@
 			"binding": "DB",
 			"database_name": "graduation-archive",
 			// Replace with the id printed by `npx wrangler d1 create graduation-archive` before deploying.
-			"database_id": "00000000-0000-0000-0000-000000000000",
+			"database_id": "9db5eed0-4015-4b79-a0b5-4d0232c30962",
 			"migrations_dir": "migrations"
 		}
 	],
