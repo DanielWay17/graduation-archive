@@ -39,3 +39,13 @@ export function slugify(input: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
 }
+
+/** Alt text for a photo: the description, else the caption, else a generic label. Blank strings don't count. */
+export function photoAlt(photo: { altText: string; caption: string }): string {
+  return photo.altText.trim() || photo.caption.trim() || "Graduation photo";
+}
+
+/** Short name of a photo for button labels ("Open photo: …"). */
+export function photoLabel(photo: { altText: string; caption: string }): string {
+  return photo.caption.trim() || photo.altText.trim() || "Untitled photo";
+}

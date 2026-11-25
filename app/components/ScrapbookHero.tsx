@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { site } from "~/config/site";
 import type { Photo } from "~/lib/types";
+import { photoAlt } from "~/lib/format";
 import { Flower, PaperClip, Squiggle, Stamp, Star, Tape } from "./Decorations";
 
 function HeroPolaroid({
@@ -30,7 +31,7 @@ function HeroPolaroid({
             src={photo.thumbnailUrl}
             srcSet={`${photo.thumbnailUrl} 800w, ${photo.imageUrl} 2560w`}
             sizes={sizes}
-            alt={photo.altText || photo.caption || "Graduation photo"}
+            alt={photoAlt(photo)}
             width={photo.width}
             height={photo.height}
             loading={eager ? "eager" : "lazy"}

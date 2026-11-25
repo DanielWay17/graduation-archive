@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Photo } from "~/lib/types";
-import { galleryAspect, tiltFor } from "~/lib/format";
+import { galleryAspect, tiltFor, photoAlt, photoLabel } from "~/lib/format";
 import { FavoriteButton } from "./FavoriteButton";
 import { PhotoCaption } from "./PhotoCaption";
 import { Tape } from "./Decorations";
@@ -19,7 +19,7 @@ export function PolaroidCard({
   eager?: boolean;
 }) {
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading");
-  const label = photo.caption || photo.altText || "Untitled photo";
+  const label = photoLabel(photo);
   const tapes = ["beige", "rose", "sage"] as const;
   const showTape = index % 3 === 0;
 
@@ -46,7 +46,7 @@ export function PolaroidCard({
         ) : (
           <img
             src={photo.thumbnailUrl}
-            alt={photo.altText || photo.caption || "Graduation photo"}
+            alt={photoAlt(photo)}
             width={photo.width}
             height={photo.height}
             loading={eager ? "eager" : "lazy"}
@@ -57,7 +57,9 @@ export function PolaroidCard({
             }}
             onLoad={() => setState("loaded")}
             onError={() => setState("error")}
-            className={`transition-opacity duration-500 ${state === "loaded" ? "opacity-100" : "opacity-0"}`}
+            // Always visible: the photo paints over the shimmer as soon as it arrives,
+            // without waiting for JavaScript (hiding it until hydration delayed LCP by ~1.4 s).
+            className="relative z-[1]"
           />
         )}
       </button>

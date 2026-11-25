@@ -50,7 +50,7 @@ export default function AlbumPage({ loaderData }: Route.ComponentProps) {
               <h1 className="mt-1 text-4xl sm:text-5xl">{album.title}</h1>
               <Squiggle className="mt-1 h-3 w-40" />
               {album.description && <p className="mt-4 text-[1.05rem] text-ink">{album.description}</p>}
-              <p className="mt-3 text-sm uppercase tracking-[0.14em] text-gold font-medium">{pluralPhotos(album.photoCount)}</p>
+              <p className="mt-3 text-sm uppercase tracking-[0.14em] text-gold-text font-medium">{pluralPhotos(album.photoCount)}</p>
               <Star className="absolute -top-1 -right-8 hidden sm:block" size={24} />
             </div>
             <Link to={`/upload?album=${album.id}`} className="btn btn-secondary">

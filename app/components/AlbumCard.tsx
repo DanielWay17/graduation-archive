@@ -43,7 +43,7 @@ export function AlbumCard({ album, index }: { album: Album; index: number }) {
           </Link>
         </h3>
         {album.description && <p className="mt-1.5 text-sm text-ink-soft line-clamp-2">{album.description}</p>}
-        <p className="mt-auto pt-3 text-xs uppercase tracking-[0.14em] text-gold font-medium">{pluralPhotos(album.photoCount)}</p>
+        <p className="mt-auto pt-3 text-xs uppercase tracking-[0.14em] text-gold-text font-medium">{pluralPhotos(album.photoCount)}</p>
       </div>
     </article>
   );

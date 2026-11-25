@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPhotoDate, galleryAspect, pluralPhotos, slugify } from "./format";
+import { formatPhotoDate, galleryAspect, photoAlt, photoLabel, pluralPhotos, slugify } from "./format";
 import { validateFile } from "./image-rules";
 
 describe("slugify", () => {
@@ -53,4 +53,10 @@ describe("validateFile", () => {
   it("rejects files over 40 MB", () => {
     expect(validateFile(file("big.jpg", "image/jpeg", 41 * 1024 * 1024))).toMatch(/larger than 40 MB/);
   });
+});
+
+describe("photoAlt / photoLabel", () => {
+  it("ignores blank alt text", () => expect(photoAlt({ altText: "  ", caption: "Cap toss" })).toBe("Cap toss"));
+  it("falls back to a generic label", () => expect(photoAlt({ altText: "", caption: " " })).toBe("Graduation photo"));
+  it("prefers the caption for labels", () => expect(photoLabel({ altText: "Five friends", caption: "Us!" })).toBe("Us!"));
 });

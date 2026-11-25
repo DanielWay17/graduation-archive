@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Photo } from "~/lib/types";
-import { formatPhotoDate } from "~/lib/format";
+import { formatPhotoDate, photoAlt, photoLabel } from "~/lib/format";
 import { FavoriteButton } from "./FavoriteButton";
 import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, ImageIcon } from "./Icons";
 
@@ -105,7 +105,7 @@ export function PhotoLightbox({
   };
 
   if (!photo) return null;
-  const label = photo.caption || photo.altText || "Untitled photo";
+  const label = photoLabel(photo);
   const date = formatPhotoDate(photo.photoDate);
 
   return (
@@ -155,7 +155,7 @@ export function PhotoLightbox({
           <img
             key={`${photo.id}-${attempt}`}
             src={attempt ? `${photo.imageUrl}?retry=${attempt}` : photo.imageUrl}
-            alt={photo.altText || photo.caption || "Graduation photo"}
+            alt={photoAlt(photo)}
             width={photo.width}
             height={photo.height}
             ref={(img) => {

@@ -42,9 +42,10 @@ export default function Favorites() {
         <p className="mt-4 text-sm text-ink-soft">Saved in this browser only. They are not shared with anyone.</p>
       </header>
 
-      <div className="mt-10" aria-busy={loading}>
+      {/* Same minimum height for loading, empty and filled states, so the footer never jumps. */}
+      <div className="mt-10 min-h-[24rem]" aria-busy={loading}>
         {loading ? (
-          <div className="masonry" aria-hidden="true">
+          <div className="masonry max-h-[24rem] overflow-hidden" aria-hidden="true">
             {[4 / 5, 1, 3 / 4, 4 / 3].map((r, i) => (
               <div key={i} className="polaroid">
                 <div className="img-skeleton" style={{ aspectRatio: r }} />

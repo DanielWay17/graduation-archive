@@ -10,9 +10,12 @@
   --color-beige: #eae1d3;
   --color-rose: #d9b8ae;
   --color-sage: #a8ae96;
-  --color-gold: #b69a68;
+  --color-gold: #b69a68; /* decoration: stars, focus ring, borders */
+  --color-gold-text: #7e6335; /* the same gold, dark enough for text (≥4.7:1 on paper) */
   --color-ink: #51473f;
-  --color-ink-soft: #92877c;
+  /* Spec secondary text was #92877C (2.96–3.48:1 on paper). Darkened to pass WCAG AA (≥4.5:1). */
+  --color-ink-soft: #6f645a;
+  --color-ink-faint: #92877c; /* spec value, for decoration only (never text) */
   --color-line: #e7ded2;
   --color-ink-strong: #3b332d;
   --color-danger: #a4513f;
@@ -105,7 +108,7 @@
   .eyebrow {
     font-family: var(--font-hand);
     font-size: 1.35rem;
-    color: var(--color-gold);
+    color: var(--color-gold-text);
     line-height: 1.2;
   }
 
