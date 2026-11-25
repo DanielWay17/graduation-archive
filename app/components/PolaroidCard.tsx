@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Photo } from "~/lib/types";
-import { tiltFor } from "~/lib/format";
+import { galleryAspect, tiltFor } from "~/lib/format";
 import { FavoriteButton } from "./FavoriteButton";
 import { PhotoCaption } from "./PhotoCaption";
 import { Tape } from "./Decorations";
@@ -32,7 +32,7 @@ export function PolaroidCard({
       <button
         type="button"
         className="polaroid-photo relative cursor-zoom-in"
-        style={{ aspectRatio: `${photo.width} / ${photo.height}` }}
+        style={{ aspectRatio: galleryAspect(photo.width, photo.height) }}
         onClick={(e) => onOpen(index, e.currentTarget)}
         aria-label={`Open photo: ${label}`}
         aria-haspopup="dialog"

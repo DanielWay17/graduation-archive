@@ -10,7 +10,16 @@ export function formatPhotoDate(date: string | null | undefined): string {
 }
 
 export function pluralPhotos(count: number): string {
-  return `${count} ${count === 1 ? "photo" : "photos"}`;
+  return `${count.toLocaleString("en-US")} ${count === 1 ? "photo" : "photos"}`;
+}
+
+/**
+ * Aspect ratio for a gallery thumbnail, kept between 1:2 and 2:1 so a panorama or a
+ * very tall photo does not dominate the grid. The lightbox always shows the full photo.
+ */
+export function galleryAspect(width: number, height: number): string {
+  const ratio = Math.min(2, Math.max(0.5, width / height));
+  return String(Math.round(ratio * 1000) / 1000);
 }
 
 /** Small, deterministic tilt (degrees) so a gallery looks hand-placed but stays scannable. */

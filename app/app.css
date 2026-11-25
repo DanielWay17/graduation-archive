@@ -24,7 +24,11 @@
   --shadow-paper: 0 1px 2px rgb(81 71 63 / 0.08), 0 6px 18px -6px rgb(81 71 63 / 0.18);
   --shadow-lift: 0 2px 4px rgb(81 71 63 / 0.08), 0 16px 32px -10px rgb(81 71 63 / 0.28);
 
-  --animate-fade-up: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  /* Strong custom curves: built-in CSS easings feel weak. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --animate-fade-up: fade-up 0.6s var(--ease-out) both;
   --animate-wiggle: wiggle 3.6s ease-in-out infinite;
 
   @keyframes fade-up {
@@ -72,6 +76,8 @@
     text-wrap: balance;
   }
   p { text-wrap: pretty; }
+  /* Visitor-written text can contain long unbroken words (file names, Vietnamese without spaces). */
+  h1, h2, h3, p, figcaption, li { overflow-wrap: anywhere; }
   img { max-width: 100%; height: auto; }
   :focus-visible {
     outline: 2.5px solid var(--color-gold);
@@ -116,20 +122,26 @@
     font-size: 0.95rem;
     line-height: 1.2;
     border: 1.5px solid transparent;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 160ms var(--ease-out);
     cursor: pointer;
     text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
     white-space: nowrap;
   }
   .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  /* Press feedback: the button confirms it heard the tap. */
+  .btn:active:not(:disabled) { transform: scale(0.97); }
   .btn-primary { background: var(--color-ink); color: var(--color-card); box-shadow: var(--shadow-paper); }
-  .btn-primary:hover:not(:disabled) { background: var(--color-ink-strong); transform: translateY(-1px); }
   .btn-secondary { background: transparent; color: var(--color-ink); border-color: var(--color-ink-soft); }
-  .btn-secondary:hover:not(:disabled) { background: var(--color-card); border-color: var(--color-ink); }
   .btn-ghost { background: transparent; color: var(--color-ink); }
-  .btn-ghost:hover:not(:disabled) { background: var(--color-paper-2); }
   .btn-danger { background: var(--color-danger); color: #fff; }
-  .btn-danger:hover:not(:disabled) { background: #8c4234; }
+  /* Hover only where a real pointer exists; on touch, :hover sticks after a tap. */
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover:not(:disabled) { background: var(--color-ink-strong); }
+    .btn-secondary:hover:not(:disabled) { background: var(--color-card); border-color: var(--color-ink); }
+    .btn-ghost:hover:not(:disabled) { background: var(--color-paper-2); }
+    .btn-danger:hover:not(:disabled) { background: #8c4234; }
+  }
   .btn-sm { min-height: 36px; padding: 0.35rem 0.85rem; font-size: 0.85rem; }
 
   .icon-btn {
@@ -139,10 +151,14 @@
     height: 44px;
     border-radius: 999px;
     color: var(--color-ink);
-    transition: background-color 0.2s, color 0.2s, transform 0.2s;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 160ms var(--ease-out);
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
-  .icon-btn:hover:not(:disabled) { background: var(--color-paper-2); }
+  .icon-btn:active:not(:disabled) { transform: scale(0.94); }
+  @media (hover: hover) and (pointer: fine) {
+    .icon-btn:hover:not(:disabled) { background: var(--color-paper-2); }
+  }
   .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
   /* --- Paper surfaces ----------------------------------------- */
@@ -161,10 +177,10 @@
     border-radius: 3px;
     box-shadow: var(--shadow-paper);
     rotate: calc(var(--tilt, 0deg) * var(--tilt-scale));
-    transition: rotate 0.35s ease, translate 0.35s ease, box-shadow 0.35s ease;
+    transition: rotate 250ms var(--ease-out), translate 250ms var(--ease-out), box-shadow 250ms var(--ease-out);
   }
   @media (min-width: 640px) { .polaroid { padding: 0.75rem 0.75rem 0; } }
-  @media (hover: hover) {
+  @media (hover: hover) and (pointer: fine) {
     .polaroid-interactive:hover {
       rotate: calc(var(--tilt, 0deg) * var(--tilt-scale) * 0.3);
       translate: 0 -4px;
@@ -240,19 +256,20 @@
   .sticker { pointer-events: none; user-select: none; }
 }
 
-.lightbox-enter { animation: lightbox-in 0.25s ease both; }
+.lightbox-enter { animation: lightbox-in 220ms var(--ease-out) both; }
 @keyframes lightbox-in { from { opacity: 0; } }
 
 /* Reveal-on-scroll: JS marks only below-the-fold sections as pending, so nothing flickers. */
-[data-reveal] { transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
+[data-reveal] { transition: opacity 500ms ease, transform 600ms var(--ease-out); }
 [data-reveal="pending"] { opacity: 0; transform: translateY(16px); }
 
+/* Reduced motion = no movement, but gentle opacity fades stay (they help comprehension). */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-  [data-reveal="pending"] { opacity: 1; transform: none; }
+  html { scroll-behavior: auto; }
+  .animate-wiggle { animation: none; }
+  .animate-fade-up { animation: lightbox-in 300ms ease both; }
+  [data-reveal="pending"] { transform: none; }
+  [data-reveal] { transition: opacity 400ms ease; }
+  .polaroid, .polaroid-interactive:hover { translate: none; transition: box-shadow 200ms ease; }
+  .btn:active:not(:disabled), .icon-btn:active:not(:disabled) { transform: none; }
 }

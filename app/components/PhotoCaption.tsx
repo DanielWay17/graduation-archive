@@ -17,7 +17,7 @@ export function PhotoCaption({
         {caption || <span className="text-ink-soft">{date || "untitled memory"}</span>}
       </p>
       {(caption && date) || uploaderName ? (
-        <p className="mt-0.5 text-[0.72rem] uppercase tracking-[0.12em] text-ink-soft">
+        <p className="mt-0.5 text-[0.72rem] uppercase tracking-[0.12em] text-ink-soft line-clamp-2">
           {[caption ? date : "", uploaderName ? `shared by ${uploaderName}` : ""].filter(Boolean).join(" · ")}
         </p>
       ) : null}

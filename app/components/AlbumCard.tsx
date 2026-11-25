@@ -21,7 +21,7 @@ export function AlbumCard({ album, index }: { album: Album; index: number }) {
             height={cover.height}
             loading={index < 3 ? "eager" : "lazy"}
             decoding="async"
-            className="transition-transform duration-500 group-hover:scale-[1.03]"
+            className="transition-transform duration-300 ease-[var(--ease-out)] group-hover:scale-[1.03]"
           />
         ) : (
           <span className="absolute inset-0 grid place-items-center content-center gap-1 text-ink-soft bg-paper-2">
@@ -30,7 +30,7 @@ export function AlbumCard({ album, index }: { album: Album; index: number }) {
           </span>
         )}
         {album.label && (
-          <span className="hand absolute left-2.5 bottom-2.5 rounded-sm bg-card/90 px-2.5 py-0.5 text-base text-ink shadow-sm -rotate-2">
+          <span className="hand absolute left-2.5 bottom-2.5 max-w-[calc(100%-1.25rem)] truncate rounded-sm bg-card/90 px-2.5 py-0.5 text-base text-ink shadow-sm -rotate-2">
             {album.label}
           </span>
         )}
