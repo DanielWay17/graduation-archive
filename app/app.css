@@ -262,6 +262,41 @@
 .lightbox-enter { animation: lightbox-in 220ms var(--ease-out) both; }
 @keyframes lightbox-in { from { opacity: 0; } }
 
+/* Lightbox swipe: the photo follows the finger with no transition; .is-settling animates the snap-back. */
+.lightbox-track.is-settling { transition: transform 200ms var(--ease-out); }
+.lightbox.is-settling { transition: background-color 200ms var(--ease-out); }
+
+/* Upload finished: the overlay fades in, then the badge settles in just after it. */
+.upload-done { transition: opacity 250ms var(--ease-out); }
+.upload-done-badge { transition: opacity 250ms var(--ease-out), scale 300ms var(--ease-out) 60ms; }
+@starting-style {
+  .upload-done { opacity: 0; }
+  .upload-done-badge { opacity: 0; scale: 0.9; }
+}
+
+/* Phone menu drops from the header. Closing stays instant: it usually closes on navigation. */
+.mobile-menu { transition: opacity 180ms var(--ease-out), translate 180ms var(--ease-out); }
+@starting-style { .mobile-menu { opacity: 0; translate: 0 -6px; } }
+
+/* Confirm dialog: fades and scales in, leaves a little faster than it arrives. */
+.confirm-dialog,
+.confirm-dialog::backdrop {
+  opacity: 0;
+  transition-property: opacity, scale, overlay, display;
+  transition-duration: 150ms;
+  transition-timing-function: var(--ease-out);
+  transition-behavior: allow-discrete;
+}
+.confirm-dialog { scale: 0.96; }
+.confirm-dialog[open],
+.confirm-dialog[open]::backdrop { opacity: 1; transition-duration: 200ms; }
+.confirm-dialog[open] { scale: 1; }
+@starting-style {
+  .confirm-dialog[open],
+  .confirm-dialog[open]::backdrop { opacity: 0; }
+  .confirm-dialog[open] { scale: 0.96; }
+}
+
 /* Reveal-on-scroll: JS marks only below-the-fold sections as pending, so nothing flickers. */
 [data-reveal] { transition: opacity 500ms ease, transform 600ms var(--ease-out); }
 [data-reveal="pending"] { opacity: 0; transform: translateY(16px); }
@@ -275,4 +310,9 @@
   [data-reveal] { transition: opacity 400ms ease; }
   .polaroid, .polaroid-interactive:hover { translate: none; transition: box-shadow 200ms ease; }
   .btn:active:not(:disabled), .icon-btn:active:not(:disabled) { transform: none; }
+  /* The photo still follows the finger (direct manipulation), but snaps back without gliding. */
+  .lightbox-track.is-settling, .lightbox.is-settling { transition: none; }
+  .upload-done-badge { transition: opacity 250ms var(--ease-out); }
+  .mobile-menu { transition: opacity 180ms var(--ease-out); }
+  .confirm-dialog, .confirm-dialog[open] { scale: none; }
 }

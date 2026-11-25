@@ -220,8 +220,8 @@ export function Uploader({
                   </div>
                 )}
                 {item.status === "done" && (
-                  <div className="absolute inset-0 grid place-items-center bg-sage/45 text-ink-strong">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1 text-sm font-medium"><CheckIcon size={16} /> Uploaded</span>
+                  <div className="upload-done absolute inset-0 grid place-items-center bg-sage/45 text-ink-strong">
+                    <span className="upload-done-badge inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1 text-sm font-medium"><CheckIcon size={16} /> Uploaded</span>
                   </div>
                 )}
               </div>

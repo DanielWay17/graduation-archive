@@ -6,9 +6,30 @@ import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, ImageIcon } from "./Icons
 
 /**
  * Fullscreen photo viewer.
- * Keyboard: Escape closes, ← / → move. Touch: swipe left/right, swipe down closes.
+ * Keyboard: Escape closes, ← / → move. Touch: swipe left/right, swipe down closes;
+ * the photo follows the finger during a swipe and glides back if the swipe falls short.
  * Focus stays inside while open and returns to the photo that opened it.
  */
+
+/** A swipe commits past this distance (px)… */
+const SWIPE_DISTANCE = 50;
+const CLOSE_DISTANCE = 90;
+/** …or when flicked faster than this (px/ms), as long as it moved at least FLICK_MIN_DISTANCE. */
+const FLICK_VELOCITY = 0.11;
+const FLICK_MIN_DISTANCE = 20;
+/** Past the first or last photo the track moves at this fraction of the finger (rubber-band). */
+const EDGE_RESISTANCE = 0.3;
+
+type Drag = {
+  /** Finger position that corresponds to a zero offset. */
+  originX: number;
+  originY: number;
+  startTime: number;
+  /** Locked after the first few pixels; "none" = an upward drag, which does nothing. */
+  axis: "x" | "y" | "none" | null;
+  dx: number;
+  dy: number;
+};
 export function PhotoLightbox({
   photos,
   index,
@@ -24,7 +45,8 @@ export function PhotoLightbox({
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const touch = useRef<{ x: number; y: number } | null>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const drag = useRef<Drag | null>(null);
   const photo = photos[index];
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
   const [attempt, setAttempt] = useState(0);
@@ -86,22 +108,90 @@ export function PhotoLightbox({
     }
   };
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length !== 1) return (touch.current = null);
-    touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  /**
+   * Moves the photo track and, while dragging down, thins the dark background so the
+   * gallery shows through. Written straight to the DOM: no React render per touchmove.
+   */
+  const setOffset = (x: number, y: number, settle: boolean) => {
+    const track = trackRef.current;
+    const root = dialogRef.current;
+    if (!track || !root) return;
+    track.classList.toggle("is-settling", settle);
+    root.classList.toggle("is-settling", settle);
+    track.style.transform = x || y ? `translate3d(${x}px, ${y}px, 0)` : "";
+    root.style.backgroundColor = y > 0 ? `rgb(31 26 22 / ${Math.max(0, 1 - y / 600)})` : "";
   };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const start = touch.current;
-    touch.current = null;
-    if (!start) return;
-    const dx = e.changedTouches[0].clientX - start.x;
-    const dy = e.changedTouches[0].clientY - start.y;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-      if (dx < 0) next();
-      else prev();
-    } else if (dy > 90 && Math.abs(dy) > Math.abs(dx) * 1.5) {
-      onClose();
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) {
+      // A second finger means pinch-zoom: drop the swipe and put the photo back.
+      if (drag.current) setOffset(0, 0, true);
+      drag.current = null;
+      return;
     }
+    // If the photo is still gliding back, catch it where it is instead of jumping.
+    const transform = trackRef.current ? getComputedStyle(trackRef.current).transform : "none";
+    const m = transform && transform !== "none" ? new DOMMatrixReadOnly(transform) : null;
+    const ox = m?.m41 ?? 0;
+    const oy = m?.m42 ?? 0;
+    setOffset(ox, oy, false);
+    drag.current = {
+      originX: e.touches[0].clientX - ox,
+      originY: e.touches[0].clientY - oy,
+      startTime: e.timeStamp,
+      axis: ox ? "x" : oy ? "y" : null,
+      dx: ox,
+      dy: oy,
+    };
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    const d = drag.current;
+    if (!d || e.touches.length !== 1) return;
+    d.dx = e.touches[0].clientX - d.originX;
+    d.dy = e.touches[0].clientY - d.originY;
+    if (d.axis === null) {
+      if (Math.abs(d.dx) < 8 && Math.abs(d.dy) < 8) return;
+      d.axis = Math.abs(d.dx) > Math.abs(d.dy) ? "x" : d.dy > 0 ? "y" : "none";
+    }
+    if (d.axis === "x") {
+      const pastEdge = (d.dx > 0 && !hasPrev) || (d.dx < 0 && !hasNext);
+      setOffset(pastEdge ? d.dx * EDGE_RESISTANCE : d.dx, 0, false);
+    } else if (d.axis === "y") {
+      setOffset(0, Math.max(0, d.dy), false);
+    }
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d || d.axis === null || d.axis === "none") return;
+    d.dx = e.changedTouches[0].clientX - d.originX;
+    d.dy = e.changedTouches[0].clientY - d.originY;
+    const elapsed = Math.max(1, e.timeStamp - d.startTime);
+    const flicked = (distance: number) => distance > FLICK_MIN_DISTANCE && distance / elapsed > FLICK_VELOCITY;
+
+    if (d.axis === "x") {
+      const towardNext = d.dx < 0 && hasNext;
+      const towardPrev = d.dx > 0 && hasPrev;
+      const distance = Math.abs(d.dx);
+      if ((towardNext || towardPrev) && (distance > SWIPE_DISTANCE || flicked(distance))) {
+        // Reset at once: the new photo fades in at the centre.
+        setOffset(0, 0, false);
+        if (towardNext) next();
+        else prev();
+        return;
+      }
+    } else if (d.dy > CLOSE_DISTANCE || flicked(d.dy)) {
+      onClose();
+      return;
+    }
+    setOffset(0, 0, true);
+  };
+
+  const onTouchCancel = () => {
+    if (drag.current) setOffset(0, 0, true);
+    drag.current = null;
   };
 
   if (!photo) return null;
@@ -114,7 +204,7 @@ export function PhotoLightbox({
       role="dialog"
       aria-modal="true"
       aria-label={`Photo ${index + 1} of ${photos.length}: ${label}`}
-      className="fixed inset-0 z-50 flex flex-col bg-[#1f1a16] text-white lightbox-enter"
+      className="lightbox fixed inset-0 z-50 flex flex-col bg-[#1f1a16] text-white lightbox-enter"
       onKeyDown={onKeyDown}
     >
       {/* Top bar */}
@@ -127,46 +217,51 @@ export function PhotoLightbox({
         </button>
       </div>
 
-      {/* Photo stage */}
+      {/* Photo stage. touch-action: pinch-zoom hands one-finger drags to the swipe code and keeps pinch-zoom. */}
       <div
-        className="relative flex-1 min-h-0 flex items-center justify-center px-2 sm:px-20 select-none"
+        className="relative flex-1 min-h-0 select-none touch-pinch-zoom"
         onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        onClick={(e) => e.target === e.currentTarget && onClose()}
+        onTouchCancel={onTouchCancel}
+        onClick={(e) => (e.target === e.currentTarget || e.target === trackRef.current) && onClose()}
       >
-        {status === "loading" && (
-          // Show the already-cached thumbnail, softened, while the full photo loads.
-          <img
-            src={photo.thumbnailUrl}
-            alt=""
-            aria-hidden="true"
-            className="absolute max-h-full max-w-[calc(100%-1rem)] sm:max-w-[calc(100%-10rem)] object-contain blur-sm opacity-60"
-          />
-        )}
-        {status === "error" ? (
-          <div className="text-center text-white/80 grid justify-items-center gap-3">
-            <ImageIcon size={36} />
-            <p>This photo could not load.</p>
-            <button type="button" className="btn btn-secondary !text-white !border-white/50" onClick={() => { setStatus("loading"); setAttempt((a) => a + 1); }}>
-              Try again
-            </button>
-          </div>
-        ) : (
-          <img
-            key={`${photo.id}-${attempt}`}
-            src={attempt ? `${photo.imageUrl}?retry=${attempt}` : photo.imageUrl}
-            alt={photoAlt(photo)}
-            width={photo.width}
-            height={photo.height}
-            ref={(img) => {
-              if (img?.complete && img.naturalWidth > 0 && status === "loading") setStatus("loaded");
-            }}
-            onLoad={() => setStatus("loaded")}
-            onError={() => setStatus("error")}
-            className={`relative max-h-full w-auto max-w-full object-contain transition-opacity duration-300 ${status === "loaded" ? "opacity-100" : "opacity-0"}`}
-            draggable={false}
-          />
-        )}
+        {/* The track holds the photo and follows the finger during a swipe. */}
+        <div ref={trackRef} className="lightbox-track absolute inset-0 flex items-center justify-center px-2 sm:px-20">
+          {status === "loading" && (
+            // Show the already-cached thumbnail, softened, while the full photo loads.
+            <img
+              src={photo.thumbnailUrl}
+              alt=""
+              aria-hidden="true"
+              className="absolute max-h-full max-w-[calc(100%-1rem)] sm:max-w-[calc(100%-10rem)] object-contain blur-sm opacity-60"
+            />
+          )}
+          {status === "error" ? (
+            <div className="text-center text-white/80 grid justify-items-center gap-3">
+              <ImageIcon size={36} />
+              <p>This photo could not load.</p>
+              <button type="button" className="btn btn-secondary !text-white !border-white/50" onClick={() => { setStatus("loading"); setAttempt((a) => a + 1); }}>
+                Try again
+              </button>
+            </div>
+          ) : (
+            <img
+              key={`${photo.id}-${attempt}`}
+              src={attempt ? `${photo.imageUrl}?retry=${attempt}` : photo.imageUrl}
+              alt={photoAlt(photo)}
+              width={photo.width}
+              height={photo.height}
+              ref={(img) => {
+                if (img?.complete && img.naturalWidth > 0 && status === "loading") setStatus("loaded");
+              }}
+              onLoad={() => setStatus("loaded")}
+              onError={() => setStatus("error")}
+              className={`relative max-h-full w-auto max-w-full object-contain transition-opacity duration-300 ${status === "loaded" ? "opacity-100" : "opacity-0"}`}
+              draggable={false}
+            />
+          )}
+        </div>
         {status === "loading" && (
           <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-white/60" role="status">
             Loading photo…
