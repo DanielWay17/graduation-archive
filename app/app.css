@@ -1,15 +1,258 @@
-@import "tailwindcss" source(".");
+@import "tailwindcss";
 
+/* ============================================================
+   Design tokens — The Graduation Archive
+   ============================================================ */
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --color-paper: #f8f5ef;
+  --color-paper-2: #f1ebe1;
+  --color-card: #fffefa;
+  --color-beige: #eae1d3;
+  --color-rose: #d9b8ae;
+  --color-sage: #a8ae96;
+  --color-gold: #b69a68;
+  --color-ink: #51473f;
+  --color-ink-soft: #92877c;
+  --color-line: #e7ded2;
+  --color-ink-strong: #3b332d;
+  --color-danger: #a4513f;
+
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-hand: "Patrick Hand", "Comic Sans MS", cursive;
+
+  --shadow-paper: 0 1px 2px rgb(81 71 63 / 0.08), 0 6px 18px -6px rgb(81 71 63 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(81 71 63 / 0.08), 0 16px 32px -10px rgb(81 71 63 / 0.28);
+
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-wiggle: wiggle 3.6s ease-in-out infinite;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes wiggle {
+    0%, 100% { rotate: -6deg; }
+    50% { rotate: 6deg; }
+  }
 }
 
-html,
-body {
-  @apply bg-white dark:bg-gray-950;
+:root {
+  /* Multiplier for photo tilt: none on phones, half on tablets, full on desktop. */
+  --tilt-scale: 0;
+  /* Very light paper grain, an inline SVG so no extra request. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.28 0 0 0 0 0.25 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@media (min-width: 640px) { :root { --tilt-scale: 0.5; } }
+@media (min-width: 1024px) { :root { --tilt-scale: 1; } }
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
+/* ============================================================
+   Base
+   ============================================================ */
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
   }
+  body {
+    font-family: var(--font-sans);
+    background-image: var(--grain);
+    min-height: 100dvh;
+    overflow-x: hidden;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    color: var(--color-ink-strong);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  p { text-wrap: pretty; }
+  img { max-width: 100%; height: auto; }
+  :focus-visible {
+    outline: 2.5px solid var(--color-gold);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  ::selection { background: var(--color-rose); color: var(--color-ink-strong); }
+}
+
+/* ============================================================
+   Components
+   ============================================================ */
+@layer components {
+  .container-page {
+    width: 100%;
+    max-width: 76rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) { .container-page { padding-inline: 1.5rem; } }
+  @media (min-width: 1024px) { .container-page { padding-inline: 2.5rem; } }
+
+  .hand { font-family: var(--font-hand); letter-spacing: 0.01em; }
+
+  .eyebrow {
+    font-family: var(--font-hand);
+    font-size: 1.35rem;
+    color: var(--color-gold);
+    line-height: 1.2;
+  }
+
+  /* --- Buttons ------------------------------------------------ */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.6rem 1.25rem;
+    border-radius: 999px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    border: 1.5px solid transparent;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-primary { background: var(--color-ink); color: var(--color-card); box-shadow: var(--shadow-paper); }
+  .btn-primary:hover:not(:disabled) { background: var(--color-ink-strong); transform: translateY(-1px); }
+  .btn-secondary { background: transparent; color: var(--color-ink); border-color: var(--color-ink-soft); }
+  .btn-secondary:hover:not(:disabled) { background: var(--color-card); border-color: var(--color-ink); }
+  .btn-ghost { background: transparent; color: var(--color-ink); }
+  .btn-ghost:hover:not(:disabled) { background: var(--color-paper-2); }
+  .btn-danger { background: var(--color-danger); color: #fff; }
+  .btn-danger:hover:not(:disabled) { background: #8c4234; }
+  .btn-sm { min-height: 36px; padding: 0.35rem 0.85rem; font-size: 0.85rem; }
+
+  .icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    color: var(--color-ink);
+    transition: background-color 0.2s, color 0.2s, transform 0.2s;
+    cursor: pointer;
+  }
+  .icon-btn:hover:not(:disabled) { background: var(--color-paper-2); }
+  .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* --- Paper surfaces ----------------------------------------- */
+  .paper-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-line);
+    border-radius: 6px;
+    box-shadow: var(--shadow-paper);
+  }
+
+  /* --- Polaroid ------------------------------------------------ */
+  .polaroid {
+    position: relative;
+    background: var(--color-card);
+    padding: 0.6rem 0.6rem 0;
+    border-radius: 3px;
+    box-shadow: var(--shadow-paper);
+    rotate: calc(var(--tilt, 0deg) * var(--tilt-scale));
+    transition: rotate 0.35s ease, translate 0.35s ease, box-shadow 0.35s ease;
+  }
+  @media (min-width: 640px) { .polaroid { padding: 0.75rem 0.75rem 0; } }
+  @media (hover: hover) {
+    .polaroid-interactive:hover {
+      rotate: calc(var(--tilt, 0deg) * var(--tilt-scale) * 0.3);
+      translate: 0 -4px;
+      box-shadow: var(--shadow-lift);
+    }
+  }
+  .polaroid-photo {
+    display: block;
+    width: 100%;
+    background: var(--color-beige);
+    overflow: hidden;
+  }
+  .polaroid-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+  /* --- Washi tape --------------------------------------------- */
+  .tape {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    width: 84px;
+    height: 24px;
+    translate: -50% 0;
+    rotate: -3deg;
+    background: rgb(234 225 211 / 0.82);
+    border-left: 2px dashed rgb(255 254 250 / 0.6);
+    border-right: 2px dashed rgb(255 254 250 / 0.6);
+    box-shadow: 0 1px 2px rgb(81 71 63 / 0.1);
+    pointer-events: none;
+    z-index: 2;
+  }
+  .tape-rose { background: rgb(217 184 174 / 0.7); }
+  .tape-sage { background: rgb(168 174 150 / 0.6); }
+  .tape-corner { left: auto; right: -18px; top: 10px; translate: 0 0; rotate: 40deg; width: 70px; }
+
+  /* --- Masonry gallery (CSS columns keep it server-rendered) -- */
+  .masonry { column-count: 1; column-gap: 1rem; }
+  @media (min-width: 400px) { .masonry { column-count: 2; } }
+  @media (min-width: 768px) { .masonry { column-count: 3; column-gap: 1.5rem; } }
+  @media (min-width: 1280px) { .masonry { column-count: 4; column-gap: 1.75rem; } }
+  /* Padding (not margin) above each card keeps the washi tape inside the card's column box. */
+  .masonry > * { break-inside: avoid; padding-top: 0.9rem; margin-bottom: 0.5rem; }
+  @media (min-width: 768px) { .masonry > * { padding-top: 1rem; margin-bottom: 1rem; } }
+
+  /* --- Skeleton shimmer while images load -------------------- */
+  .img-skeleton {
+    background: linear-gradient(100deg, var(--color-beige) 30%, var(--color-paper-2) 50%, var(--color-beige) 70%);
+    background-size: 300% 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+  @keyframes shimmer { to { background-position: -150% 0; } }
+
+  /* --- Form fields -------------------------------------------- */
+  .field-label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.3rem; color: var(--color-ink); }
+  .field {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.55rem 0.8rem;
+    border: 1.5px solid var(--color-line);
+    border-radius: 8px;
+    background: var(--color-card);
+    color: var(--color-ink-strong);
+    font-size: 1rem; /* 16px stops iOS zooming into inputs */
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field:focus { outline: none; border-color: var(--color-gold); box-shadow: 0 0 0 3px rgb(182 154 104 / 0.25); }
+  textarea.field { min-height: 5rem; resize: vertical; }
+  .field-hint { font-size: 0.8rem; color: var(--color-ink-soft); margin-top: 0.25rem; }
+
+  /* --- Torn paper divider ------------------------------------- */
+  .torn-edge { display: block; width: 100%; height: 22px; color: var(--color-paper-2); }
+
+  /* --- Decorative SVG stickers -------------------------------- */
+  .sticker { pointer-events: none; user-select: none; }
+}
+
+.lightbox-enter { animation: lightbox-in 0.25s ease both; }
+@keyframes lightbox-in { from { opacity: 0; } }
+
+/* Reveal-on-scroll: JS marks only below-the-fold sections as pending, so nothing flickers. */
+[data-reveal] { transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
+[data-reveal="pending"] { opacity: 0; transform: translateY(16px); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  [data-reveal="pending"] { opacity: 1; transform: none; }
 }
