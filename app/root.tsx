@@ -14,7 +14,7 @@ export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;1,400&family=Patrick+Hand&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap",
   },
 ];
 
@@ -29,7 +29,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#F8F5EF" />
+        <meta name="theme-color" content="#F6F5F2" />
         <Meta />
         <Links />
       </head>
@@ -53,7 +53,7 @@ export default function App() {
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   const notFound = isRouteErrorResponse(error) && error.status === 404;
-  let details = notFound ? "This page slipped out of the scrapbook." : "Something went wrong while opening this page.";
+  let details = notFound ? "This page does not exist, or it has moved." : "Something went wrong while opening this page.";
   if (import.meta.env.DEV && error instanceof Error) details = error.message;
   return (
     <div className="container-page py-16">
@@ -61,7 +61,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       <EmptyState
         title={notFound ? "Page not found" : "Something went wrong"}
         message={details}
-        action={<Link to="/" className="btn btn-primary">Back to the cover</Link>}
+        action={<Link to="/" className="btn btn-primary">Back to home</Link>}
       />
     </div>
   );

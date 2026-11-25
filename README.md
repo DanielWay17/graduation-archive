@@ -11,7 +11,7 @@ A public digital scrapbook for graduation photos. Anyone can browse the albums a
 | Website + API | Cloudflare Workers, React Router v8 (server-rendered) | 100,000 requests/day |
 | Database (albums, captions) | Cloudflare D1 (SQLite) | 5 GB, 5M reads/day |
 | Photo files | Cloudflare R2 | 10 GB storage, free downloads |
-| Styling | Tailwind CSS v4 + custom scrapbook components | — |
+| Styling | Tailwind CSS v4, photo-first components | — |
 
 Uploads stop at `STORAGE_LIMIT_MB` (9,500 MB by default, set in `wrangler.jsonc`), so the archive cannot grow past the R2 free tier.
 

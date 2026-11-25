@@ -1,4 +1,4 @@
-import { Flower, Star } from "./Decorations";
+import { ImageIcon } from "./Icons";
 
 export function EmptyState({
   title,
@@ -10,12 +10,13 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="relative mx-auto my-10 max-w-md paper-card px-6 py-10 text-center rotate-[-0.6deg]">
-      <Star className="absolute -top-3 -left-3" />
-      <Flower className="absolute -bottom-4 -right-3" />
-      <h2 className="text-2xl">{title}</h2>
-      <p className="hand mt-2 text-xl text-ink-soft">{message}</p>
-      {action && <div className="mt-6 flex flex-wrap justify-center gap-3">{action}</div>}
+    <div className="mx-auto my-10 max-w-md rounded-2xl border border-line bg-card px-6 py-12 text-center">
+      <span aria-hidden="true" className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-paper-2 text-ink-soft">
+        <ImageIcon size={26} />
+      </span>
+      <h2 className="mt-5 text-2xl">{title}</h2>
+      <p className="mt-2 text-ink-soft">{message}</p>
+      {action && <div className="mt-7 flex flex-wrap justify-center gap-3">{action}</div>}
     </div>
   );
 }

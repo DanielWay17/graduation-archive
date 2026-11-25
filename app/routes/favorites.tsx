@@ -6,7 +6,6 @@ import { cachedPhoto, rememberFetched } from "~/lib/photo-cache";
 import { PhotoGallery } from "~/components/PhotoGallery";
 import { EmptyState } from "~/components/EmptyState";
 import { Seo } from "~/components/Seo";
-import { Squiggle } from "~/components/Decorations";
 
 const noSubscribe = () => () => {};
 /**
@@ -54,9 +53,8 @@ export default function Favorites() {
     <div className="container-page pt-10 sm:pt-14">
       <Seo title="Favorites" description="The photos you saved in this browser." noindex />
       <header className="max-w-2xl">
-        <p className="eyebrow">the ones I keep coming back to</p>
-        <h1 className="mt-1 text-4xl sm:text-5xl">Favorites</h1>
-        <Squiggle className="mt-1 h-3 w-40" />
+        <p className="eyebrow">Saved by you</p>
+        <h1 className="mt-3 text-5xl sm:text-6xl">Favorites</h1>
         <p className="mt-4 text-sm text-ink-soft">Saved in this browser only. They are not shared with anyone.</p>
       </header>
 
@@ -65,9 +63,9 @@ export default function Favorites() {
         {loading ? (
           <div className="masonry max-h-[24rem] overflow-hidden" aria-hidden="true">
             {[4 / 5, 1, 3 / 4, 4 / 3].map((r, i) => (
-              <div key={i} className="polaroid">
-                <div className="img-skeleton" style={{ aspectRatio: r }} />
-                <div className="h-12" />
+              <div key={i}>
+                <div className="img-skeleton rounded-xl" style={{ aspectRatio: r }} />
+                <div className="h-10" />
               </div>
             ))}
           </div>

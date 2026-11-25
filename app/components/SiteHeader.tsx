@@ -6,8 +6,7 @@ import { CloseIcon, MenuIcon, UploadIcon } from "./Icons";
 
 function Mortarboard() {
   return (
-    <svg aria-hidden="true" width="30" height="30" viewBox="0 0 32 32" className="shrink-0 hidden min-[360px]:block">
-      <circle cx="16" cy="16" r="15" fill="var(--color-beige)" />
+    <svg aria-hidden="true" width="28" height="28" viewBox="4 6 24 20" className="shrink-0 hidden min-[360px]:block">
       <path d="M16 9 6 13.5l10 4.5 10-4.5L16 9Z" fill="var(--color-ink)" />
       <path d="M10.5 16v4c0 1.4 2.5 2.6 5.5 2.6s5.5-1.2 5.5-2.6v-4L16 18.5 10.5 16Z" fill="var(--color-ink)" />
       <path d="M24.5 14.2v5.3" stroke="var(--color-gold)" strokeWidth="1.4" strokeLinecap="round" />
@@ -37,21 +36,21 @@ export function SiteHeader({ isOwner }: { isOwner: boolean }) {
     }`;
 
   const favoriteBadge = ids.length > 0 && (
-    <span className="ml-1.5 inline-grid min-w-5 h-5 place-items-center rounded-full bg-rose px-1 text-[0.7rem] font-semibold text-ink-strong tabular-nums">
+    <span className="ml-1.5 inline-grid min-w-5 h-5 place-items-center rounded-full bg-ink-strong px-1 text-[0.7rem] font-semibold text-card tabular-nums">
       {ids.length}
       <span className="sr-only"> saved</span>
     </span>
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/80 bg-paper/90 backdrop-blur-md supports-[not(backdrop-filter:blur(1px))]:bg-paper">
+    <header className="sticky top-0 z-40 border-b border-line/80 bg-paper/85 backdrop-blur-xl supports-[not(backdrop-filter:blur(1px))]:bg-paper">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 btn btn-primary !min-h-0 z-50">
         Skip to content
       </a>
       <div className="container-page flex h-16 items-center justify-between gap-3">
         <Link to="/" className="flex min-w-0 items-center gap-2 sm:gap-2.5 min-h-[44px] rounded-md" aria-label={`${site.name}, home`}>
           <Mortarboard />
-          <span className="hand text-[1.3rem] min-[375px]:text-[1.45rem] sm:text-[1.6rem] leading-none text-ink-strong whitespace-nowrap">
+          <span className="font-display text-[1.15rem] min-[375px]:text-[1.25rem] sm:text-[1.4rem] font-medium tracking-[-0.01em] leading-none text-ink-strong whitespace-nowrap">
             {site.name}
           </span>
         </Link>

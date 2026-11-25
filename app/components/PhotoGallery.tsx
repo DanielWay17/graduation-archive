@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Photo } from "~/lib/types";
 import { rememberPhotos } from "~/lib/photo-cache";
-import { PolaroidCard } from "./PolaroidCard";
+import { PhotoCard } from "./PhotoCard";
 import { PhotoLightbox } from "./PhotoLightbox";
 
 const HASH_PREFIX = "#photo-";
 
 /**
- * Masonry grid of Polaroids plus the lightbox. The open photo is mirrored in the
+ * Masonry grid of photos plus the lightbox. The open photo is mirrored in the
  * URL hash (#photo-<id>) so a shared link opens that photo, without a page reload
  * and without losing the scroll position.
  */
@@ -63,7 +63,7 @@ export function PhotoGallery({ photos, showAlbum = false }: { photos: Photo[]; s
       <div className="masonry">
         {photos.map((photo, i) => (
           <div key={photo.id} id={`card-${photo.id}`}>
-            <PolaroidCard photo={photo} index={i} onOpen={open} eager={i < 4} />
+            <PhotoCard photo={photo} index={i} onOpen={open} eager={i < 4} />
           </div>
         ))}
       </div>

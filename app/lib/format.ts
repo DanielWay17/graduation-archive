@@ -22,12 +22,6 @@ export function galleryAspect(width: number, height: number): string {
   return String(Math.round(ratio * 1000) / 1000);
 }
 
-/** Small, deterministic tilt (degrees) so a gallery looks hand-placed but stays scannable. */
-export function tiltFor(index: number): number {
-  const tilts = [-1.6, 1.2, -0.6, 1.8, -1.1, 0.5];
-  return tilts[index % tilts.length];
-}
-
 /** Vietnamese-aware slug: "Kỷ niệm Đại học" → "ky-niem-dai-hoc". */
 export function slugify(input: string): string {
   return input

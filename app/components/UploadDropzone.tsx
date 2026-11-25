@@ -28,7 +28,7 @@ export function UploadDropzone({ onFiles, disabled }: { onFiles: (files: File[])
       <UploadIcon size={34} className="mx-auto text-gold" />
       <p className="mt-3 text-lg font-medium text-ink-strong">
         <span className="hidden sm:inline">Drop photos here, or </span>
-        <label htmlFor={inputId} className="inline-flex min-h-[44px] items-center cursor-pointer text-ink-strong underline decoration-rose decoration-2 underline-offset-4 hover:decoration-gold">
+        <label htmlFor={inputId} className="inline-flex min-h-[44px] items-center cursor-pointer text-ink-strong underline decoration-gold decoration-2 underline-offset-4 hover:decoration-ink-strong">
           <span className="sm:hidden">Choose photos</span>
           <span className="hidden sm:inline">choose from your device</span>
         </label>

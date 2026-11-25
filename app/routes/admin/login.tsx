@@ -2,7 +2,6 @@ import { data, Form, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/login";
 import { assertSameOrigin, isOwner, login } from "~/server/auth.server";
 import { Seo } from "~/components/Seo";
-import { Tape } from "~/components/Decorations";
 
 function safeNext(value: FormDataEntryValue | string | null) {
   const next = String(value ?? "/admin");
@@ -27,10 +26,9 @@ export default function Login({ loaderData, actionData }: Route.ComponentProps) 
   return (
     <div className="container-page py-16">
       <Seo title="Owner login" noindex />
-      <div className="relative mx-auto max-w-sm paper-card px-6 pt-10 pb-8 rotate-[-0.5deg]">
-        <Tape tone="rose" />
+      <div className="mx-auto max-w-sm paper-card px-6 pt-10 pb-8">
         <h1 className="text-3xl text-center">Owner’s desk</h1>
-        <p className="hand mt-1 text-center text-lg text-ink-soft">only the scrapbook keeper beyond this page</p>
+        <p className="mt-2 text-center text-sm text-ink-soft">For the owner of the archive only.</p>
         <Form method="post" className="mt-6 grid gap-4">
           <input type="hidden" name="next" value={loaderData.next} />
           <div>

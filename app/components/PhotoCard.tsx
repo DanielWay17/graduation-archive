@@ -1,12 +1,12 @@
 import { useState } from "react";
 import type { Photo } from "~/lib/types";
-import { galleryAspect, tiltFor, photoAlt, photoLabel } from "~/lib/format";
+import { galleryAspect, photoAlt, photoLabel } from "~/lib/format";
 import { FavoriteButton } from "./FavoriteButton";
 import { PhotoCaption } from "./PhotoCaption";
-import { Tape } from "./Decorations";
 import { ImageIcon } from "./Icons";
 
-export function PolaroidCard({
+/** One photo in the gallery: the photo, a heart, and a short caption underneath. */
+export function PhotoCard({
   photo,
   index,
   onOpen,
@@ -20,18 +20,12 @@ export function PolaroidCard({
 }) {
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading");
   const label = photoLabel(photo);
-  const tapes = ["beige", "rose", "sage"] as const;
-  const showTape = index % 3 === 0;
 
   return (
-    <figure
-      className="polaroid polaroid-interactive"
-      style={{ "--tilt": `${tiltFor(index)}deg` } as React.CSSProperties}
-    >
-      {showTape && <Tape tone={tapes[(index / 3) % 3 | 0]} />}
+    <figure className="relative">
       <button
         type="button"
-        className="polaroid-photo relative cursor-zoom-in"
+        className="photo-tile cursor-zoom-in"
         style={{ aspectRatio: galleryAspect(photo.width, photo.height) }}
         onClick={(e) => onOpen(index, e.currentTarget)}
         aria-label={`Open photo: ${label}`}
@@ -63,7 +57,7 @@ export function PolaroidCard({
           />
         )}
       </button>
-      <div className="absolute right-2.5 top-2.5 sm:right-3 sm:top-3 z-[3]">
+      <div className="absolute right-2 top-2 z-[3]">
         <FavoriteButton photoId={photo.id} label={label} />
       </div>
       <PhotoCaption caption={photo.caption} photoDate={photo.photoDate} uploaderName={photo.uploaderName} />

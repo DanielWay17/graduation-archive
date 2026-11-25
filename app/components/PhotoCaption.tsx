@@ -1,6 +1,6 @@
 import { formatPhotoDate } from "~/lib/format";
 
-/** Handwritten caption under a Polaroid. Falls back to the date when there is no caption. */
+/** Short caption under a photo. Falls back to the date when there is no caption. */
 export function PhotoCaption({
   caption,
   photoDate,
@@ -11,16 +11,14 @@ export function PhotoCaption({
   uploaderName?: string;
 }) {
   const date = formatPhotoDate(photoDate);
+  const meta = [caption ? date : "", uploaderName ? `Shared by ${uploaderName}` : ""].filter(Boolean).join(" · ");
+  if (!caption && !date && !meta) return null;
   return (
-    <figcaption className="px-1 pt-2.5 pb-3 min-h-[3rem]">
-      <p className="hand text-[1.15rem] leading-snug text-ink-strong line-clamp-2">
-        {caption || <span className="text-ink-soft">{date || "untitled memory"}</span>}
+    <figcaption className="px-0.5 pt-2.5">
+      <p className="text-[0.92rem] font-medium leading-snug text-ink-strong line-clamp-2">
+        {caption || <span className="font-normal text-ink-soft">{date}</span>}
       </p>
-      {(caption && date) || uploaderName ? (
-        <p className="mt-0.5 text-[0.72rem] uppercase tracking-[0.12em] text-ink-soft line-clamp-2">
-          {[caption ? date : "", uploaderName ? `shared by ${uploaderName}` : ""].filter(Boolean).join(" · ")}
-        </p>
-      ) : null}
+      {meta && <p className="mt-0.5 text-xs text-ink-soft line-clamp-2">{meta}</p>}
     </figcaption>
   );
 }

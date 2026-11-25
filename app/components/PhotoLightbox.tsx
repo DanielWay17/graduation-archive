@@ -324,7 +324,7 @@ export function PhotoLightbox({
       <div className="px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
         <div className="mx-auto max-w-3xl flex items-end gap-3">
           <div className="flex-1 min-w-0">
-            <p className="hand text-xl sm:text-2xl leading-snug text-white">{photo.caption || <span className="text-white/60">Untitled memory</span>}</p>
+            <p className="font-display text-xl sm:text-2xl leading-snug text-white">{photo.caption || <span className="text-white/60">Untitled memory</span>}</p>
             <p className="mt-0.5 text-xs sm:text-sm text-white/60">
               {[showAlbum ? photo.albumTitle : "", date, photo.uploaderName ? `shared by ${photo.uploaderName}` : ""].filter(Boolean).join(" · ")}
             </p>

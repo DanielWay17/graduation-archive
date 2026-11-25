@@ -17,8 +17,8 @@ export default function AdminLayout() {
       <Seo title="Owner’s desk" noindex />
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
         <div>
-          <p className="eyebrow">behind the scrapbook</p>
-          <h1 className="mt-1 text-3xl sm:text-4xl">Owner’s desk</h1>
+          <p className="eyebrow">Owner only</p>
+          <h1 className="mt-2 text-3xl sm:text-4xl">Owner’s desk</h1>
         </div>
         <div className="flex flex-wrap items-center gap-1">
           <nav aria-label="Owner" className="flex flex-wrap gap-1">

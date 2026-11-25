@@ -28,7 +28,7 @@ export function FavoriteButton({
         toggle(photoId);
       }}
     >
-      <HeartIcon filled={active} size={21} className={active ? "text-[#c98e80]" : ""} />
+      <HeartIcon filled={active} size={21} className={active ? "text-rose" : ""} />
     </button>
   );
 }
