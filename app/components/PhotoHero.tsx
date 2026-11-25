@@ -4,7 +4,7 @@ import type { Photo } from "~/lib/types";
 import { photoAlt } from "~/lib/format";
 
 /** Full-width cover photo with the title set on top of it, like the cover of a photo book. */
-export function PhotoHero({ photo, exploreHref }: { photo: Photo | undefined; exploreHref: string }) {
+export function PhotoHero({ photo }: { photo: Photo | undefined }) {
   return (
     <section className="relative isolate overflow-hidden bg-night text-white" aria-labelledby="hero-title">
       {photo && (
@@ -35,14 +35,9 @@ export function PhotoHero({ photo, exploreHref }: { photo: Photo | undefined; ex
             <p className="mt-6 max-w-xl text-[1.05rem] text-white/85 sm:text-lg">
               Four years, countless memories, and the people who made every moment special.
             </p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Link to={exploreHref} className="btn btn-light">
-                Explore memories
-              </Link>
-              <Link to="/albums" className="btn btn-glass">
-                View albums
-              </Link>
-            </div>
+            <Link to="/albums" className="btn btn-light mt-9">
+              View albums
+            </Link>
           </div>
 
           <p className="hidden border-l border-white/40 pl-4 text-sm leading-relaxed text-white/80 lg:block">

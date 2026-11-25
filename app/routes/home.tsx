@@ -9,23 +9,21 @@ import { ArrowRightIcon } from "~/components/Icons";
 
 export async function loader() {
   const [albums, photos] = await Promise.all([listAlbums(), featuredPhotos(2)]);
-  const firstWithPhotos = albums.find((a) => a.photoCount > 0);
   return {
     albums: albums.slice(0, 6),
     totalAlbums: albums.length,
     heroPhotos: photos.map(publicPhoto),
-    exploreHref: firstWithPhotos ? `/albums/${firstWithPhotos.slug}` : "/albums",
   };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { albums, heroPhotos, exploreHref, totalAlbums } = loaderData;
+  const { albums, heroPhotos, totalAlbums } = loaderData;
   // The share band reuses a second photo, blurred, so it does not repeat the hero.
   const bandPhoto = heroPhotos[1] ?? heroPhotos[0];
   return (
     <>
       <Seo image={heroPhotos[0]?.imageUrl} />
-      <PhotoHero photo={heroPhotos[0]} exploreHref={exploreHref} />
+      <PhotoHero photo={heroPhotos[0]} />
 
       <section className="container-page pt-16 pb-6 sm:pt-24" aria-labelledby="featured-albums" data-reveal>
         <div className="flex flex-wrap items-end justify-between gap-4">
