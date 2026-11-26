@@ -1,3 +1,4 @@
+import { useCallback, useRef, useState } from "react";
 import { data, Link, useFetcher } from "react-router";
 import type { Route } from "./+types/album";
 import { assertSameOrigin, requireOwner } from "~/server/auth.server";
@@ -15,6 +16,7 @@ import {
 import { deleteImages } from "~/server/storage.server";
 import type { Album, Photo } from "~/lib/types";
 import { ConfirmButton } from "~/components/ConfirmButton";
+import { PhotoLightbox } from "~/components/PhotoLightbox";
 import { UploadIcon } from "~/components/Icons";
 import { photoAlt } from "~/lib/format";
 
@@ -62,7 +64,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   return data({ ok: false, error: "Unknown action." }, { status: 400 });
 }
 
-function PhotoEditor({ photo, albums, isCover }: { photo: Photo; albums: Album[]; isCover: boolean }) {
+function PhotoEditor({ photo, albums, isCover, onOpen }: { photo: Photo; albums: Album[]; isCover: boolean; onOpen: (trigger: HTMLElement) => void }) {
   const fetcher = useFetcher<typeof action>();
   const busy = fetcher.state !== "idle";
   const p = photo.id;
@@ -70,8 +72,15 @@ function PhotoEditor({ photo, albums, isCover }: { photo: Photo; albums: Album[]
     <li className="paper-card overflow-hidden flex flex-col">
       {/* Every card gets the same 4:3 frame, so cards line up whatever the photo's shape. */}
       <div className="relative aspect-[4/3] overflow-hidden bg-paper-2">
-        <img src={photo.thumbnailUrl} alt={photoAlt(photo)} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          onClick={(e) => onOpen(e.currentTarget)}
+          className="group absolute inset-0 cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-gold"
+          aria-label={`View full size: ${photoAlt(photo)}`}
+        >
+          <img src={photo.thumbnailUrl} alt="" className="h-full w-full object-cover transition-[scale] duration-300 group-hover:scale-[1.03]" loading="lazy" />
+        </button>
+        <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap gap-1.5">
           {!photo.published && <span className="rounded-full bg-ink-strong px-2.5 py-0.5 text-xs font-medium text-card">Draft</span>}
           {isCover && <span className="rounded-full bg-gold px-2.5 py-0.5 text-xs font-medium text-card">Album cover</span>}
         </div>
@@ -132,6 +141,13 @@ function PhotoEditor({ photo, albums, isCover }: { photo: Photo; albums: Album[]
 export default function AdminAlbum({ loaderData }: Route.ComponentProps) {
   const { album, albums, photos } = loaderData;
   const coverId = album.coverImage?.photoId;
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const close = useCallback(() => {
+    setOpenIndex(null);
+    // Return focus to the photo that opened the viewer.
+    requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }));
+  }, []);
   return (
     <div>
       <nav aria-label="Breadcrumb" className="text-sm text-ink-soft">
@@ -151,10 +167,22 @@ export default function AdminAlbum({ loaderData }: Route.ComponentProps) {
         <p className="mt-8 paper-card p-6 text-center text-ink-soft">No photos in this album yet.</p>
       ) : (
         <ul className="mt-8 grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {photos.map((photo) => (
-            <PhotoEditor key={photo.id} photo={photo} albums={albums} isCover={photo.id === coverId} />
+          {photos.map((photo, i) => (
+            <PhotoEditor
+              key={photo.id}
+              photo={photo}
+              albums={albums}
+              isCover={photo.id === coverId}
+              onOpen={(trigger) => {
+                triggerRef.current = trigger;
+                setOpenIndex(i);
+              }}
+            />
           ))}
         </ul>
+      )}
+      {openIndex !== null && photos[openIndex] && (
+        <PhotoLightbox photos={photos} index={openIndex} onIndexChange={setOpenIndex} onClose={close} showAlbum={false} />
       )}
     </div>
   );
