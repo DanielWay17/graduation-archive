@@ -335,16 +335,6 @@ export async function deletePhoto(id: string): Promise<string[]> {
   return [photo.imageKey, photo.thumbKey];
 }
 
-export async function movePhoto(id: string, direction: -1 | 1) {
-  const photo = await getPhoto(id);
-  if (!photo) return;
-  const { results } = await db()
-    .prepare("SELECT id FROM photos WHERE album_id = ? ORDER BY sort_order, created_at")
-    .bind(photo.albumId)
-    .all<{ id: string }>();
-  await reorder("photos", results.map((r) => r.id), id, direction);
-}
-
 async function reorder(table: "albums" | "photos", orderedIds: string[], id: string, direction: -1 | 1) {
   const from = orderedIds.indexOf(id);
   const to = from + direction;

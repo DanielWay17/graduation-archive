@@ -7,7 +7,6 @@ import {
   getPhoto,
   listAlbums,
   listPhotos,
-  movePhoto,
   publicPhoto,
   setAlbumCover,
   setPhotoPublished,
@@ -16,7 +15,7 @@ import {
 import { deleteImages } from "~/server/storage.server";
 import type { Album, Photo } from "~/lib/types";
 import { ConfirmButton } from "~/components/ConfirmButton";
-import { ChevronLeftIcon, ChevronRightIcon, UploadIcon } from "~/components/Icons";
+import { UploadIcon } from "~/components/Icons";
 import { photoAlt } from "~/lib/format";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -56,10 +55,6 @@ export async function action({ request, params }: Route.ActionArgs) {
     case "cover":
       await setAlbumCover(params.id, id);
       return { ok: true, error: "" };
-    case "move-up":
-    case "move-down":
-      await movePhoto(id, intent === "move-up" ? -1 : 1);
-      return { ok: true, error: "" };
     case "delete":
       await deleteImages(await deletePhoto(id));
       return { ok: true, error: "" };
@@ -67,7 +62,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   return data({ ok: false, error: "Unknown action." }, { status: 400 });
 }
 
-function PhotoEditor({ photo, albums, isCover, index, total }: { photo: Photo; albums: Album[]; isCover: boolean; index: number; total: number }) {
+function PhotoEditor({ photo, albums, isCover }: { photo: Photo; albums: Album[]; isCover: boolean }) {
   const fetcher = useFetcher<typeof action>();
   const busy = fetcher.state !== "idle";
   const p = photo.id;
@@ -81,19 +76,6 @@ function PhotoEditor({ photo, albums, isCover, index, total }: { photo: Photo; a
           {isCover && <span className="rounded-full bg-gold px-2.5 py-0.5 text-xs font-medium text-card">Album cover</span>}
         </div>
       </div>
-
-      {/* Order bar: position in the album and the buttons that move the photo. */}
-      <fetcher.Form method="post" className="flex items-center justify-between gap-2 border-b border-line px-4 py-1.5">
-        <input type="hidden" name="id" value={p} />
-        <p className="min-w-0 truncate text-xs text-ink-soft">
-          Photo {index + 1} of {total}
-          {photo.uploaderName && <> · Shared by {photo.uploaderName}</>}
-        </p>
-        <div className="flex shrink-0">
-          <button name="intent" value="move-up" className="icon-btn" disabled={index === 0 || busy} aria-label="Move photo earlier" title="Move earlier"><ChevronLeftIcon size={18} /></button>
-          <button name="intent" value="move-down" className="icon-btn" disabled={index === total - 1 || busy} aria-label="Move photo later" title="Move later"><ChevronRightIcon size={18} /></button>
-        </div>
-      </fetcher.Form>
 
       <fetcher.Form method="post" id={`${p}-edit`} className="grid flex-1 content-start gap-4 p-4">
         <input type="hidden" name="id" value={p} />
@@ -169,8 +151,8 @@ export default function AdminAlbum({ loaderData }: Route.ComponentProps) {
         <p className="mt-8 paper-card p-6 text-center text-ink-soft">No photos in this album yet.</p>
       ) : (
         <ul className="mt-8 grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {photos.map((photo, i) => (
-            <PhotoEditor key={photo.id} photo={photo} albums={albums} isCover={photo.id === coverId} index={i} total={photos.length} />
+          {photos.map((photo) => (
+            <PhotoEditor key={photo.id} photo={photo} albums={albums} isCover={photo.id === coverId} />
           ))}
         </ul>
       )}
