@@ -203,7 +203,11 @@
   .album-card {
     position: relative;
     isolation: isolate;
-    display: block;
+    /* The text block sits at the bottom through flex, not absolute positioning,
+       so the title link's ::after covers the whole card, not only the text. */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
     aspect-ratio: 1; /* square on phones so a full-width list stays short */
     border-radius: 18px;
     overflow: hidden;

@@ -30,7 +30,7 @@ export function AlbumCard({ album, index }: { album: Album; index: number }) {
         </span>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+      <div className="p-5 sm:p-6">
         <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-white/75">
           {album.photoCount > 0 ? pluralPhotos(album.photoCount) : "No photos yet"}
         </p>
