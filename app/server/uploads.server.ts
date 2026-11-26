@@ -19,6 +19,8 @@ import {
 import { hasUploadPass } from "./human-check.server";
 import { checkAndCleanImage, ImageFileError } from "./image-file.server";
 import { deleteImages, putImage } from "./storage.server";
+import { getUploadLimits } from "./settings.server";
+import { pluralPhotos } from "~/lib/format";
 
 export const LIMITS = {
   fullMaxBytes: 12 * 1024 * 1024,
@@ -44,13 +46,13 @@ export async function handleUpload(request: Request): Promise<{ status: number; 
   }
   const who = await clientKey(request);
   if (!owner) {
-    const perHour = Number(env.GUEST_UPLOADS_PER_HOUR) || 60;
-    const perDay = Number(env.GUEST_UPLOADS_PER_DAY) || 1000;
-    const [mine, everyone] = await Promise.all([
+    // The owner sets these in Owner's desk → Settings.
+    const [{ perHour, perDay }, mine, everyone] = await Promise.all([
+      getUploadLimits(),
       countRecentEvents(`upload:${who}`, 3_600_000),
       countRecentEvents("upload:all", 86_400_000),
     ]);
-    if (mine >= perHour) return fail(429, `You have shared ${perHour} photos this hour. Please try again later.`, "rate_limited");
+    if (mine >= perHour) return fail(429, `You have shared ${pluralPhotos(perHour)} this hour. Please try again later.`, "rate_limited");
     if (everyone >= perDay) return fail(429, "The archive has received many photos today. Please try again tomorrow.", "rate_limited");
   }
 

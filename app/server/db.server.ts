@@ -345,6 +345,30 @@ async function reorder(table: "albums" | "photos", orderedIds: string[], id: str
   );
 }
 
+// ---------- Settings ----------
+
+/** Saved values for the given keys; keys never saved are left out. */
+export async function getSettings(keys: string[]): Promise<Record<string, string>> {
+  if (keys.length === 0) return {};
+  const { results } = await db()
+    .prepare(`SELECT key, value FROM settings WHERE key IN (${keys.map(() => "?").join(",")})`)
+    .bind(...keys)
+    .all<{ key: string; value: string }>();
+  return Object.fromEntries(results.map((r) => [r.key, r.value]));
+}
+
+export async function saveSettings(values: Record<string, string>) {
+  await db().batch(
+    Object.entries(values).map(([key, value]) =>
+      db()
+        .prepare(
+          "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')",
+        )
+        .bind(key, value),
+    ),
+  );
+}
+
 // ---------- Rate limiting ----------
 
 /** Counts events in `bucket` within the last `windowMs`. */

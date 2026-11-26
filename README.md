@@ -22,7 +22,7 @@ Uploads stop at `STORAGE_LIMIT_MB` (9,500 MB by default, set in `wrangler.jsonc`
 1. The browser resizes each photo to a display image (longest side at most 2560 px) and a thumbnail (at most 800 px), as WebP, or JPEG where the browser cannot write WebP. Re-encoding drops all EXIF data, including GPS location.
 2. The server checks the bytes are really WebP or JPEG, reads the true size, and **removes EXIF/XMP blocks again**, in case someone posts a file directly to the API.
 3. A SHA-256 fingerprint of the original file blocks duplicate uploads.
-4. Limits for visitors: `GUEST_UPLOADS_PER_HOUR` per IP address (60) and `GUEST_UPLOADS_PER_DAY` for everyone together (1,000). The owner has no limit.
+4. Limits for visitors: photos per hour per IP address (60 by default) and photos per day for everyone together (1,000 by default). The owner changes both in **Owner's desk → Settings**; until then the `GUEST_UPLOADS_PER_HOUR` and `GUEST_UPLOADS_PER_DAY` values in `wrangler.jsonc` apply. The owner has no limit.
 5. Visitor uploads are always published. Only the owner can save drafts. Draft images return 404 to everyone except the owner.
 6. Optional spam check (off by default): see [Spam check](#spam-check-optional).
 

@@ -20,6 +20,7 @@ export default [
       index("routes/admin/index.tsx"),
       route("albums/:id", "routes/admin/album.tsx"),
       route("upload", "routes/admin/upload.tsx"),
+      route("settings", "routes/admin/settings.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;
