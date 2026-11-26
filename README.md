@@ -2,7 +2,9 @@
 
 *A chapter to remember. A lifetime of memories.*
 
-A public digital scrapbook for graduation photos. Anyone can browse the albums and share their own photos, and shared photos appear right away. The owner has a password-protected area (`/admin`) for managing albums and photos.
+**Live site: [graduation.dungnguyen.workers.dev](https://graduation.dungnguyen.workers.dev)**
+
+A public photo archive for graduation memories. Anyone can browse the albums and share their own photos, and shared photos appear right away. The owner manages albums and photos in a password-protected area (`/admin`).
 
 ## Stack (free tier)
 
@@ -63,7 +65,7 @@ npm run db:migrate:remote
 npm run deploy
 ```
 
-The site is then live at `https://graduation-archive.<your-subdomain>.workers.dev`. To use your own domain, add it under Workers → your worker → Settings → Domains & Routes.
+The site is then live at `https://graduation.<your-subdomain>.workers.dev` (the Worker `name` in `wrangler.jsonc`, then your account's workers.dev subdomain). To use your own domain, add it under Workers → your worker → Settings → Domains & Routes.
 
 Never run `npm run db:seed:local` with `--remote`: the sample photos are only for local previews.
 
@@ -87,7 +89,7 @@ Optional local check: `npm run hooks:install` adds a git pre-push hook that runs
 
 Cloudflare Turnstile is a free "are you a person?" widget. When it is on, a visitor completes it once after choosing photos, and can then upload for 2 hours. The owner never sees it. It is off until both keys are set.
 
-1. In the Cloudflare dashboard, open **Turnstile → Add widget**. Add your site's hostname (for example `graduation-archive.<your-subdomain>.workers.dev`) and choose **Managed** mode.
+1. In the Cloudflare dashboard, open **Turnstile → Add widget**. Add your site's hostname (for example `graduation.<your-subdomain>.workers.dev`) and choose **Managed** mode.
 2. Paste the **Site Key** into `wrangler.jsonc` → `vars` → `TURNSTILE_SITE_KEY`.
 3. Save the **Secret Key** as a secret: `npx wrangler secret put TURNSTILE_SECRET_KEY`
 4. Deploy again: `npm run deploy`
@@ -108,7 +110,7 @@ To try it locally, add Cloudflare's test keys to `.dev.vars`: `TURNSTILE_SITE_KE
 ```
 app/
   config/site.ts           editable site details
-  components/              UI: SiteHeader, ScrapbookHero, AlbumCard/AlbumGrid, PolaroidCard,
+  components/              UI: SiteHeader, PhotoHero, AlbumCard/AlbumGrid, PhotoCard,
                            PhotoGallery, PhotoLightbox, FavoriteButton, UploadDropzone, Uploader, …
   lib/                     browser + shared code: types, favorites (localStorage), image resizing
   server/                  server-only adapters

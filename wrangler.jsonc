@@ -10,7 +10,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "graduation-archive",
+	"name": "graduation",
 	"compatibility_date": "2026-11-23",
 	"main": "./workers/app.ts",
 	"vars": {

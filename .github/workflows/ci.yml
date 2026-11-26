@@ -35,7 +35,7 @@ jobs:
       cancel-in-progress: false
     environment:
       name: production
-      url: https://graduation-archive.nguyencongtiendung17.workers.dev
+      url: https://graduation.dungnguyen.workers.dev
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -58,7 +58,7 @@ jobs:
       - name: Check the live site answers
         run: |
           for i in 1 2 3 4 5 6; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" https://graduation-archive.nguyencongtiendung17.workers.dev/)
+            code=$(curl -s -o /dev/null -w "%{http_code}" https://graduation.dungnguyen.workers.dev/)
             [ "$code" = 200 ] && echo "Live site OK" && exit 0
             sleep 10
           done

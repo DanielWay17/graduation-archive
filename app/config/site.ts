@@ -10,5 +10,5 @@ export const site = {
   /** Shown on the hero's date label. */
   graduationDate: "Nov 21, 2026",
   description:
-    "A public digital scrapbook of graduation memories: friendships, family moments, and the people who made every moment special.",
+    "A public photo archive of graduation memories: friendships, family moments, and the people who made every moment special.",
 } as const;
