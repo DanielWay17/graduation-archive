@@ -16,7 +16,8 @@ import {
 import { deleteImages } from "~/server/storage.server";
 import type { Album, Photo } from "~/lib/types";
 import { ConfirmButton } from "~/components/ConfirmButton";
-import { ChevronDownIcon, ChevronUpIcon, UploadIcon } from "~/components/Icons";
+import { ChevronLeftIcon, ChevronRightIcon, UploadIcon } from "~/components/Icons";
+import { photoAlt } from "~/lib/format";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   await requireOwner(request);
@@ -66,59 +67,72 @@ export async function action({ request, params }: Route.ActionArgs) {
   return data({ ok: false, error: "Unknown action." }, { status: 400 });
 }
 
-function PhotoEditor({ photo, albums, isCover, first, last }: { photo: Photo; albums: Album[]; isCover: boolean; first: boolean; last: boolean }) {
+function PhotoEditor({ photo, albums, isCover, index, total }: { photo: Photo; albums: Album[]; isCover: boolean; index: number; total: number }) {
   const fetcher = useFetcher<typeof action>();
   const busy = fetcher.state !== "idle";
   const p = photo.id;
   return (
     <li className="paper-card overflow-hidden flex flex-col">
-      <div className="relative bg-paper-2" style={{ aspectRatio: "4 / 3" }}>
-        <img src={photo.thumbnailUrl} alt={photo.altText} className="h-full w-full object-contain" loading="lazy" />
-        <div className="absolute left-2 top-2 flex flex-wrap gap-1.5">
-          {!photo.published && <span className="rounded-full bg-ink px-2.5 py-0.5 text-xs text-card">Draft</span>}
-          {isCover && <span className="rounded-full bg-gold px-2.5 py-0.5 text-xs text-card">Cover</span>}
+      {/* Every card gets the same 4:3 frame, so cards line up whatever the photo's shape. */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-paper-2">
+        <img src={photo.thumbnailUrl} alt={photoAlt(photo)} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+          {!photo.published && <span className="rounded-full bg-ink-strong px-2.5 py-0.5 text-xs font-medium text-card">Draft</span>}
+          {isCover && <span className="rounded-full bg-gold px-2.5 py-0.5 text-xs font-medium text-card">Album cover</span>}
         </div>
-        <fetcher.Form method="post" className="absolute right-1 top-1 flex flex-col">
-          <input type="hidden" name="id" value={p} />
-          <button name="intent" value="move-up" className="icon-btn bg-card/90" disabled={first || busy} aria-label="Move photo earlier"><ChevronUpIcon size={18} /></button>
-          <button name="intent" value="move-down" className="icon-btn bg-card/90 mt-1" disabled={last || busy} aria-label="Move photo later"><ChevronDownIcon size={18} /></button>
-        </fetcher.Form>
       </div>
-      <fetcher.Form method="post" id={`${p}-edit`} className="p-4 grid gap-3">
+
+      {/* Order bar: position in the album and the buttons that move the photo. */}
+      <fetcher.Form method="post" className="flex items-center justify-between gap-2 border-b border-line px-4 py-1.5">
+        <input type="hidden" name="id" value={p} />
+        <p className="min-w-0 truncate text-xs text-ink-soft">
+          Photo {index + 1} of {total}
+          {photo.uploaderName && <> · Shared by {photo.uploaderName}</>}
+        </p>
+        <div className="flex shrink-0">
+          <button name="intent" value="move-up" className="icon-btn" disabled={index === 0 || busy} aria-label="Move photo earlier" title="Move earlier"><ChevronLeftIcon size={18} /></button>
+          <button name="intent" value="move-down" className="icon-btn" disabled={index === total - 1 || busy} aria-label="Move photo later" title="Move later"><ChevronRightIcon size={18} /></button>
+        </div>
+      </fetcher.Form>
+
+      <fetcher.Form method="post" id={`${p}-edit`} className="grid flex-1 content-start gap-4 p-4">
         <input type="hidden" name="id" value={p} />
         <div>
           <label className="field-label" htmlFor={`${p}-caption`}>Caption</label>
-          <input id={`${p}-caption`} name="caption" className="field" maxLength={300} defaultValue={photo.caption} />
+          <input id={`${p}-caption`} name="caption" className="field" maxLength={300} defaultValue={photo.caption} placeholder="Shown under the photo" />
         </div>
         <div>
-          <label className="field-label" htmlFor={`${p}-alt`}>Description for screen readers</label>
-          <input id={`${p}-alt`} name="altText" className="field" maxLength={300} defaultValue={photo.altText} />
+          <label className="field-label" htmlFor={`${p}-alt`}>
+            What is in the photo? <span className="font-normal text-ink-soft">(optional)</span>
+          </label>
+          <input id={`${p}-alt`} name="altText" className="field" maxLength={300} defaultValue={photo.altText} placeholder="e.g. Five friends in gowns on the library steps" aria-describedby={`${p}-alt-hint`} />
+          <p id={`${p}-alt-hint`} className="field-hint">Read aloud to blind visitors. If empty, the caption is used.</p>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="field-label" htmlFor={`${p}-date`}>Date</label>
-            <input id={`${p}-date`} name="photoDate" type="date" className="field" defaultValue={photo.photoDate ?? ""} />
-          </div>
-          <div>
-            <label className="field-label" htmlFor={`${p}-album`}>Album</label>
-            <select id={`${p}-album`} name="albumId" className="field" defaultValue={photo.albumId}>
-              {albums.map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}
-            </select>
-          </div>
+        <div>
+          <label className="field-label" htmlFor={`${p}-album`}>Album</label>
+          <select id={`${p}-album`} name="albumId" className="field" defaultValue={photo.albumId}>
+            {albums.map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}
+          </select>
         </div>
-        <label className="inline-flex items-center gap-2 min-h-[44px] text-sm">
-          <input type="checkbox" name="published" defaultChecked={photo.published} className="h-5 w-5 accent-[var(--color-ink)]" />
-          Published (visible to everyone)
+        <div>
+          <label className="field-label" htmlFor={`${p}-date`}>Date taken <span className="font-normal text-ink-soft">(optional)</span></label>
+          <input id={`${p}-date`} name="photoDate" type="date" className="field" defaultValue={photo.photoDate ?? ""} />
+        </div>
+        <label className="flex items-center gap-2.5 min-h-[44px] text-sm">
+          <input type="checkbox" name="published" defaultChecked={photo.published} className="h-5 w-5 accent-[var(--color-ink-strong)]" />
+          Visible to everyone
         </label>
-        {photo.uploaderName && <p className="text-xs text-ink-soft">Shared by {photo.uploaderName}</p>}
         {fetcher.data?.error && <p role="alert" className="text-sm text-danger">{fetcher.data.error}</p>}
       </fetcher.Form>
+
       {/* Outside the edit form: the delete dialog has its own form, and forms cannot nest. */}
-      <div className="flex flex-wrap items-center gap-2 px-4 pb-4">
-          <button form={`${p}-edit`} name="intent" value="save" className="btn btn-primary btn-sm" disabled={busy}>{busy ? "Saving…" : "Save"}</button>
-          {!isCover && photo.published && (
-            <button form={`${p}-edit`} name="intent" value="cover" className="btn btn-secondary btn-sm" disabled={busy}>Use as cover</button>
-          )}
+      <div className="flex flex-wrap items-center gap-2 border-t border-line px-4 py-3">
+        <button form={`${p}-edit`} name="intent" value="save" className="btn btn-primary btn-sm" disabled={busy}>{busy ? "Saving…" : "Save"}</button>
+        {!isCover && photo.published && (
+          <button form={`${p}-edit`} name="intent" value="cover" className="btn btn-secondary btn-sm" disabled={busy}>Use as cover</button>
+        )}
+        {fetcher.state === "idle" && fetcher.data?.ok && <span className="text-sm text-ink-soft" role="status">Saved.</span>}
+        <span className="ml-auto">
           <ConfirmButton
             title="Delete this photo?"
             message="The photo is removed from the archive permanently. This cannot be undone."
@@ -127,7 +141,7 @@ function PhotoEditor({ photo, albums, isCover, first, last }: { photo: Photo; al
           >
             Delete
           </ConfirmButton>
-          {fetcher.state === "idle" && fetcher.data?.ok && <span className="text-sm text-ink-soft" role="status">Saved.</span>}
+        </span>
       </div>
     </li>
   );
@@ -154,9 +168,9 @@ export default function AdminAlbum({ loaderData }: Route.ComponentProps) {
       {photos.length === 0 ? (
         <p className="mt-8 paper-card p-6 text-center text-ink-soft">No photos in this album yet.</p>
       ) : (
-        <ul className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="mt-8 grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {photos.map((photo, i) => (
-            <PhotoEditor key={photo.id} photo={photo} albums={albums} isCover={photo.id === coverId} first={i === 0} last={i === photos.length - 1} />
+            <PhotoEditor key={photo.id} photo={photo} albums={albums} isCover={photo.id === coverId} index={i} total={photos.length} />
           ))}
         </ul>
       )}
